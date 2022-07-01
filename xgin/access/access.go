@@ -18,9 +18,10 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 		panic("access handler must not nil")
 	}
 	conf := newConfig(handler, options...)
+	skip := sliceToSet(conf.skipPaths)
 	return func(ctx *gin.Context) {
-		skip := sliceToSet(conf.skipPaths)
-		if _, ok := skip[ctx.Request.URL.Path]; ok {
+		mps := NewMethodPath(ctx.Request.Method, ctx.FullPath()).String()
+		if _, ok := skip[mps]; ok {
 			return
 		}
 
@@ -69,7 +70,7 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 			return ans
 		}
 		var requestEntry *RequestEntry
-		if c, ok := conf.specificPath[ctx.Request.URL.Path]; ok {
+		if c, ok := conf.specificPath[mps]; ok {
 			requestEntry = buildRequestEntry(c.requestHeader, c.requestBody)
 		} else {
 			requestEntry = buildRequestEntry(conf.requestHeader, conf.requestBody)
@@ -92,7 +93,7 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 		}
 
 		var responseEntry *ResponseEntry
-		if c, ok := conf.specificPath[ctx.Request.URL.Path]; ok {
+		if c, ok := conf.specificPath[mps]; ok {
 			responseEntry = buildResponseEntry(c.responseHeader, c.responseBody)
 		} else {
 			responseEntry = buildResponseEntry(conf.responseHeader, conf.responseBody)

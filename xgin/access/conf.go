@@ -80,21 +80,25 @@ type ConfigOption func(c *config)
 
 type withConfig struct{}
 
-func (withConfig) SkipPaths(paths ...string) ConfigOption {
+func (withConfig) SkipPaths(paths ...MethodPath) ConfigOption {
 	return func(c *config) {
 		if c.skipPaths == nil {
 			c.skipPaths = make([]string, 0)
 		}
-		c.skipPaths = append(c.skipPaths, paths...)
+		p := make([]string, 0, len(paths))
+		for _, path := range paths {
+			p = append(p, path.String())
+		}
+		c.skipPaths = append(c.skipPaths, p...)
 	}
 }
 
-func (withConfig) SpecificPath(path string, options ...BaseConfigOption) ConfigOption {
+func (withConfig) SpecificPath(path MethodPath, options ...BaseConfigOption) ConfigOption {
 	return func(c *config) {
 		if c.specificPath == nil {
 			c.specificPath = make(map[string]*baseConfig)
 		}
-		c.specificPath[path] = newBaseConfig(options...)
+		c.specificPath[path.String()] = newBaseConfig(options...)
 	}
 }
 
