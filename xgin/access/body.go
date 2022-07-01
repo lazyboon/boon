@@ -14,4 +14,3 @@ func (b bodyWriter) Write(bs []byte) (int, error) {
 	b.Body.Write(bs)
 	return b.ResponseWriter.Write(bs)
 }
-

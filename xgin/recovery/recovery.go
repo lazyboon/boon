@@ -13,8 +13,9 @@ import (
 	"time"
 )
 
-func New(conf Conf) gin.HandlerFunc {
+func New(options ...ConfigOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		conf := newConfig(options...)
 		defer func() {
 			if err := recover(); err != nil {
 				// Check for a broken connection, as it is not really a
@@ -27,7 +28,7 @@ func New(conf Conf) gin.HandlerFunc {
 						}
 					}
 				}
-				if conf.LogCallback != nil {
+				if conf.logCallback != nil {
 					stack := stack(3)
 					httpRequest, _ := httputil.DumpRequest(c.Request, false)
 					headers := strings.Split(string(httpRequest), "\r\n")
@@ -46,14 +47,16 @@ func New(conf Conf) gin.HandlerFunc {
 					} else {
 						callbackStr = fmt.Sprintf("[Recovery] %s panic recovered:\n%s\n%s%s", timeFormat(time.Now()), err, stack, reset)
 					}
-					conf.LogCallback(callbackStr)
+					conf.logCallback(callbackStr)
 				}
 				if brokenPipe {
 					// If the connection is dead, we can't write a status to it.
 					_ = c.Error(err.(error))
 					c.Abort()
 				} else {
-					conf.Handle(c, err)
+					if conf.handler != nil {
+						conf.handler(c, err)
+					}
 				}
 			}
 		}()

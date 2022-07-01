@@ -85,4 +85,3 @@ var (
 	NotExtended                   = NewWithStatusCode(http.StatusNotExtended)
 	NetworkAuthenticationRequired = NewWithStatusCode(http.StatusNetworkAuthenticationRequired)
 )
-

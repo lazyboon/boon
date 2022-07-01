@@ -13,12 +13,13 @@ import (
 	"time"
 )
 
-func New(conf Conf) gin.HandlerFunc {
-	if conf.Handler == nil {
-		panic("log callback must not nil")
+func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
+	if handler == nil {
+		panic("access handler must not nil")
 	}
+	conf := newConfig(handler, options...)
 	return func(ctx *gin.Context) {
-		skip := sliceToSet(conf.SkipPaths)
+		skip := sliceToSet(conf.skipPaths)
 		if _, ok := skip[ctx.Request.URL.Path]; ok {
 			return
 		}
@@ -68,10 +69,10 @@ func New(conf Conf) gin.HandlerFunc {
 			return ans
 		}
 		var requestEntry *RequestEntry
-		if c, ok := conf.SpecificPath[ctx.Request.URL.Path]; ok {
-			requestEntry = buildRequestEntry(c.RequestHeader, c.RequestBody)
+		if c, ok := conf.specificPath[ctx.Request.URL.Path]; ok {
+			requestEntry = buildRequestEntry(c.requestHeader, c.requestBody)
 		} else {
-			requestEntry = buildRequestEntry(conf.RequestHeader, conf.RequestBody)
+			requestEntry = buildRequestEntry(conf.requestHeader, conf.requestBody)
 		}
 
 		ctx.Next()
@@ -91,10 +92,10 @@ func New(conf Conf) gin.HandlerFunc {
 		}
 
 		var responseEntry *ResponseEntry
-		if c, ok := conf.SpecificPath[ctx.Request.URL.Path]; ok {
-			responseEntry = buildResponseEntry(c.ResponseHeader, c.ResponseBody)
+		if c, ok := conf.specificPath[ctx.Request.URL.Path]; ok {
+			responseEntry = buildResponseEntry(c.responseHeader, c.responseBody)
 		} else {
-			responseEntry = buildResponseEntry(conf.ResponseHeader, conf.ResponseBody)
+			responseEntry = buildResponseEntry(conf.responseHeader, conf.responseBody)
 		}
 
 		// entry
@@ -102,7 +103,7 @@ func New(conf Conf) gin.HandlerFunc {
 		if latency > time.Minute {
 			latency = latency - latency%time.Second
 		}
-		conf.Handler(&Entry{
+		conf.handler(&Entry{
 			Method:     ctx.Request.Method,
 			Path:       ctx.Request.RequestURI,
 			RemoteAddr: ctx.Request.RemoteAddr,

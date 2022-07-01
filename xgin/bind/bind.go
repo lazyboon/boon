@@ -109,4 +109,3 @@ func TOML(val interface{}) gin.HandlerFunc {
 func Uri(val interface{}) gin.HandlerFunc {
 	return bind(KeyUri, val)
 }
-
