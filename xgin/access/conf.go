@@ -1,5 +1,10 @@
 package access
 
+var (
+	WithConfig     = withConfig{}
+	WithBaseConfig = withBaseConfig{}
+)
+
 //----------------------------------------------------------------------------------------------------------------------
 
 type baseConfig struct {
