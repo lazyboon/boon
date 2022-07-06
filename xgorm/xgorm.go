@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"sync"
 )
 
 var (
+	lock           sync.RWMutex
 	instanceMap    map[string]*gorm.DB
 	connectPoolSet map[string]struct{}
 )
 
-func AddConnectPool(alias string, options ...ConfigOption) {
+func AddConnectPool(options ...ConfigOption) {
+	lock.Lock()
+	defer lock.Unlock()
 	initInstancesContainer()
 	conf := newConfig(options...)
 	key := connectPoolKey(conf)
@@ -59,11 +63,15 @@ func AddConnectPool(alias string, options ...ConfigOption) {
 	if conf.connMaxIdleTime != nil {
 		sqlDB.SetConnMaxIdleTime(*conf.connMaxIdleTime)
 	}
-	instanceMap[alias] = db
+	instanceMap[conf.alias] = db
 }
 
-func ConnectPool(alias string) *gorm.DB {
-	return instanceMap[alias]
+func Connect(alias ...string) *gorm.DB {
+	k := ""
+	if len(alias) > 0 {
+		k = alias[len(alias)-1]
+	}
+	return instanceMap[k]
 }
 
 func initInstancesContainer() {

@@ -1,16 +1,11 @@
-package xgorm
+package xmongo
 
-import (
-	"gorm.io/gorm"
-	"time"
-)
+import "time"
 
 var (
 	WithConfig   = withConfig{}
-	WithFindOne  = withFindOne{}
 	WithFindByID = withFindByID{}
-	WithSearch   = withSearch{}
-	WithCount    = withCount{}
+	WithFindOne  = withFindOne{}
 )
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -19,38 +14,27 @@ type config struct {
 	alias           string
 	host            string
 	port            uint
-	db              string
-	user            string
-	password        string
-	charset         string
-	maxIdleConn     *uint
-	maxOpenConn     *uint
-	connMaxLifetime *time.Duration
-	connMaxIdleTime *time.Duration
-	debug           bool
-	gormConfig      *gorm.Config
+	maxPoolSize     *uint64
+	minPoolSize     *uint64
+	maxConnIdleTime *time.Duration
+	username        *string
+	password        *string
 }
 
 func newConfig(options ...ConfigOption) *config {
 	c := &config{
-		host:            "127.0.0.1",
-		port:            3306,
-		db:              "mysql",
-		user:            "root",
-		password:        "",
-		charset:         "utf8mb4",
-		maxIdleConn:     nil,
-		maxOpenConn:     nil,
-		connMaxLifetime: nil,
-		connMaxIdleTime: nil,
-		debug:           false,
-		gormConfig:      &gorm.Config{},
+		alias:       "",
+		host:        "127.0.0.1",
+		port:        27017,
+		maxPoolSize: nil,
+		minPoolSize: nil,
+		username:    nil,
+		password:    nil,
 	}
 	for _, option := range options {
 		option(c)
 	}
 	return c
-
 }
 
 type ConfigOption func(c *config)
@@ -75,63 +59,33 @@ func (withConfig) Port(port uint) ConfigOption {
 	}
 }
 
-func (withConfig) DB(db string) ConfigOption {
+func (withConfig) MaxPoolSize(size uint64) ConfigOption {
 	return func(c *config) {
-		c.db = db
+		c.maxPoolSize = &size
 	}
 }
 
-func (withConfig) User(user string) ConfigOption {
+func (withConfig) MinPoolSize(size uint64) ConfigOption {
 	return func(c *config) {
-		c.user = user
+		c.minPoolSize = &size
 	}
 }
 
-func (withConfig) Password(password string) ConfigOption {
+func (withConfig) MaxConnIdleTime(t time.Duration) ConfigOption {
 	return func(c *config) {
-		c.password = password
+		c.maxConnIdleTime = &t
 	}
 }
 
-func (withConfig) Charset(charset string) ConfigOption {
+func (withConfig) Username(val string) ConfigOption {
 	return func(c *config) {
-		c.charset = charset
+		c.username = &val
 	}
 }
 
-func (withConfig) MaxIdleConn(maxIdleConn uint) ConfigOption {
+func (withConfig) Password(val string) ConfigOption {
 	return func(c *config) {
-		c.maxIdleConn = &maxIdleConn
-	}
-}
-
-func (withConfig) MaxOpenConn(maxOpenConn uint) ConfigOption {
-	return func(c *config) {
-		c.maxOpenConn = &maxOpenConn
-	}
-}
-
-func (withConfig) ConnMaxLifetime(d time.Duration) ConfigOption {
-	return func(c *config) {
-		c.connMaxLifetime = &d
-	}
-}
-
-func (withConfig) ConnMaxIdleTime(d time.Duration) ConfigOption {
-	return func(c *config) {
-		c.connMaxIdleTime = &d
-	}
-}
-
-func (withConfig) Debug(v bool) ConfigOption {
-	return func(c *config) {
-		c.debug = v
-	}
-}
-
-func (withConfig) GormConfig(conf *gorm.Config) ConfigOption {
-	return func(c *config) {
-		c.gormConfig = conf
+		c.password = &val
 	}
 }
 
@@ -176,17 +130,17 @@ func (withFindByID) Unscoped(v bool) FindByIDOption {
 //----------------------------------------------------------------------------------------------------------------------
 
 type findOneConfig struct {
-	select_  []string
-	unselect []string
-	where    *Condition
-	having   *Condition
-	group    string
-	order    string
-	unscoped bool
+	condition map[string]interface{}
+	select_   []string
+	unselect  []string
+	order     D
+	unscoped  bool
 }
 
 func newFindOneConfig(options ...FindOneOption) *findOneConfig {
-	c := &findOneConfig{}
+	c := &findOneConfig{
+		condition: make(map[string]interface{}),
+	}
 	for _, option := range options {
 		option(c)
 	}
@@ -209,25 +163,13 @@ func (withFindOne) Unselect(fields ...string) FindOneOption {
 	}
 }
 
-func (withFindOne) Where(condition *Condition) FindOneOption {
+func (withFindOne) Condition(condition map[string]interface{}) FindOneOption {
 	return func(c *findOneConfig) {
-		c.where = condition
+		c.condition = condition
 	}
 }
 
-func (withFindOne) Having(condition *Condition) FindOneOption {
-	return func(c *findOneConfig) {
-		c.having = condition
-	}
-}
-
-func (withFindOne) Group(group string) FindOneOption {
-	return func(c *findOneConfig) {
-		c.group = group
-	}
-}
-
-func (withFindOne) Order(order string) FindOneOption {
+func (withFindOne) Order(order D) FindOneOption {
 	return func(c *findOneConfig) {
 		c.order = order
 	}
@@ -242,23 +184,22 @@ func (withFindOne) Unscoped(v bool) FindOneOption {
 //----------------------------------------------------------------------------------------------------------------------
 
 type searchConfig struct {
-	limit    uint
-	page     uint
-	select_  []string
-	unselect []string
-	where    *Condition
-	having   *Condition
-	group    string
-	order    string
-	count    bool
-	unscoped bool
+	limit     uint
+	page      uint
+	condition map[string]interface{}
+	select_   []string
+	unselect  []string
+	order     D
+	count     bool
+	unscoped  bool
 }
 
 func newSearchConfig(options ...SearchOption) *searchConfig {
 	c := &searchConfig{
-		limit: 10,
-		page:  1,
-		count: true,
+		condition: make(map[string]interface{}),
+		limit:     10,
+		page:      1,
+		count:     true,
 	}
 	for _, option := range options {
 		option(c)
@@ -282,6 +223,12 @@ func (withSearch) Page(page uint) SearchOption {
 	}
 }
 
+func (withSearch) Condition(condition map[string]interface{}) SearchOption {
+	return func(c *searchConfig) {
+		c.condition = condition
+	}
+}
+
 func (withSearch) Select(fields ...string) SearchOption {
 	return func(c *searchConfig) {
 		c.select_ = fields
@@ -294,33 +241,15 @@ func (withSearch) Unselect(fields ...string) SearchOption {
 	}
 }
 
-func (withSearch) Where(condition *Condition) SearchOption {
-	return func(c *searchConfig) {
-		c.where = condition
-	}
-}
-
-func (withSearch) Having(condition *Condition) SearchOption {
-	return func(c *searchConfig) {
-		c.having = condition
-	}
-}
-
-func (withSearch) Group(group string) SearchOption {
-	return func(c *searchConfig) {
-		c.group = group
-	}
-}
-
-func (withSearch) Order(order string) SearchOption {
+func (withSearch) Order(order D) SearchOption {
 	return func(c *searchConfig) {
 		c.order = order
 	}
 }
 
-func (withSearch) Count(count bool) SearchOption {
+func (withSearch) Count(v bool) SearchOption {
 	return func(c *searchConfig) {
-		c.count = count
+		c.count = v
 	}
 }
 
@@ -333,10 +262,8 @@ func (withSearch) Unscoped(v bool) SearchOption {
 //----------------------------------------------------------------------------------------------------------------------
 
 type countConfig struct {
-	where    *Condition
-	having   *Condition
-	group    string
-	unscoped bool
+	condition map[string]interface{}
+	unscoped  bool
 }
 
 func newCountConfig(options ...CountOption) *countConfig {
@@ -351,21 +278,9 @@ type CountOption func(c *countConfig)
 
 type withCount struct{}
 
-func (withCount) Where(condition *Condition) CountOption {
+func (withCount) Condition(condition map[string]interface{}) CountOption {
 	return func(c *countConfig) {
-		c.where = condition
-	}
-}
-
-func (withCount) Having(condition *Condition) CountOption {
-	return func(c *countConfig) {
-		c.having = condition
-	}
-}
-
-func (withCount) Group(group string) CountOption {
-	return func(c *countConfig) {
-		c.group = group
+		c.condition = condition
 	}
 }
 

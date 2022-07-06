@@ -11,14 +11,14 @@ type Result struct {
 	RowsAffected uint
 }
 
-func newResult(err error, rowsAffected uint) *Result {
-	return &Result{
+func newResult(err error, rowsAffected uint) Result {
+	return Result{
 		Error:        err,
 		RowsAffected: rowsAffected,
 	}
 }
 
-func newResultByDB(db *gorm.DB) *Result {
+func newResultByDB(db *gorm.DB) Result {
 	return newResult(db.Error, uint(db.RowsAffected))
 }
 
@@ -27,28 +27,28 @@ type CountResult struct {
 	Count uint
 }
 
-func newCountResult(err error, count uint) *CountResult {
-	return &CountResult{
+func newCountResult(err error, count uint) CountResult {
+	return CountResult{
 		Error: err,
 		Count: count,
 	}
 }
 
 type OperatorInterface interface {
-	Create(md interface{}) *Result
-	Creates(mds interface{}, batchSize int) *Result
+	Create(md interface{}) Result
+	Creates(mds interface{}, batchSize int) Result
 
-	DeleteByID(id uint) *Result
-	DeleteByQuery(condition *Condition) *Result
+	DeleteByID(id uint) Result
+	DeleteByQuery(condition *Condition) Result
 
-	UpdateByID(id uint, data map[string]interface{}) *Result
-	UpdateByQuery(condition *Condition, data map[string]interface{}) *Result
+	UpdateByID(id uint, data map[string]interface{}) Result
+	UpdateByQuery(condition *Condition, data map[string]interface{}) Result
 
-	FindByID(id uint, destination interface{}) error
+	FindByID(id uint, destination interface{}, options ...FindByIDOption) error
 	First(destination interface{}, options ...FindOneOption) error
 	Last(destination interface{}, options ...FindOneOption) error
-	Search(destination interface{}, options ...SearchOption) *CountResult
-	Count(options ...CountOption) *CountResult
+	Search(destination interface{}, options ...SearchOption) CountResult
+	Count(options ...CountOption) CountResult
 }
 
 type Operator struct {
@@ -56,28 +56,28 @@ type Operator struct {
 	TableName interface{}
 }
 
-func (o *Operator) Create(md interface{}) *Result {
+func (o *Operator) Create(md interface{}) Result {
 	return newResultByDB(o.getDB().
 		Create(md),
 	)
 }
 
-func (o *Operator) Creates(mds interface{}, batchSize int) *Result {
+func (o *Operator) Creates(mds interface{}, batchSize int) Result {
 	return newResultByDB(o.getDB().
 		CreateInBatches(mds, batchSize),
 	)
 }
 
-func (o *Operator) DeleteByID(id uint) *Result {
+func (o *Operator) DeleteByID(id uint) Result {
 	return newResultByDB(o.getDB().
 		Where("id = ?", id).
 		UpdateColumn("deleted_at", time.Now()),
 	)
 }
 
-func (o *Operator) DeleteByQuery(condition *Condition) *Result {
+func (o *Operator) DeleteByQuery(condition *Condition) Result {
 	if condition == nil {
-		return &Result{Error: errors.New("delete by query, condition can't nil")}
+		return Result{Error: errors.New("delete by query, condition can't nil")}
 	}
 	return newResultByDB(o.getDB().
 		Where(condition.Query, condition.Args...).
@@ -85,16 +85,16 @@ func (o *Operator) DeleteByQuery(condition *Condition) *Result {
 	)
 }
 
-func (o *Operator) UpdateByID(id uint, data map[string]interface{}) *Result {
+func (o *Operator) UpdateByID(id uint, data map[string]interface{}) Result {
 	return newResultByDB(o.getDB().
 		Where("id = ?", id).
 		Updates(data),
 	)
 }
 
-func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface{}) *Result {
+func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface{}) Result {
 	if condition == nil {
-		return &Result{Error: errors.New("update by query, condition can't nil")}
+		return Result{Error: errors.New("update by query, condition can't nil")}
 	}
 	return newResultByDB(o.getDB().
 		Where(condition.Query, condition.Args...).
@@ -102,9 +102,20 @@ func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface
 	)
 }
 
-func (o *Operator) FindByID(id uint, destination interface{}) error {
-	return o.getDB().
-		Where("id = ?", id).
+func (o *Operator) FindByID(id uint, destination interface{}, options ...FindByIDOption) error {
+	conf := newFindByIDConfig(options...)
+	db := o.getDB()
+	if conf.unscoped {
+		db = db.Unscoped()
+	}
+	if len(conf.select_) > 0 {
+		db = db.Select(conf.select_)
+	}
+	if len(conf.unselect) > 0 {
+		db = db.Omit(conf.unselect...)
+	}
+	return db.
+		Where("`id` = ?", id).
 		First(destination).Error
 }
 
@@ -118,10 +129,13 @@ func (o *Operator) Last(destination interface{}, options ...FindOneOption) error
 		Last(destination).Error
 }
 
-func (o *Operator) Search(destination interface{}, options ...SearchOption) *CountResult {
+func (o *Operator) Search(destination interface{}, options ...SearchOption) CountResult {
 	var count int64
 	db := o.getDB()
 	conf := newSearchConfig(options...)
+	if conf.unscoped {
+		db = db.Unscoped()
+	}
 	if len(conf.select_) > 0 {
 		db = db.Select(conf.select_)
 	}
@@ -153,10 +167,13 @@ func (o *Operator) Search(destination interface{}, options ...SearchOption) *Cou
 	return newCountResult(db.Error, uint(count))
 }
 
-func (o *Operator) Count(options ...CountOption) *CountResult {
+func (o *Operator) Count(options ...CountOption) CountResult {
 	var count int64
 	db := o.getDB()
 	conf := newCountConfig(options...)
+	if conf.unscoped {
+		db = db.Unscoped()
+	}
 	if conf.where != nil {
 		db = db.Where(conf.where.Query, conf.where.Args...)
 	}
@@ -182,6 +199,9 @@ func (o *Operator) getDB() *gorm.DB {
 func (o *Operator) getDBWithFindOneOptions(options ...FindOneOption) *gorm.DB {
 	db := o.getDB()
 	conf := newFindOneConfig(options...)
+	if conf.unscoped {
+		db = db.Unscoped()
+	}
 	if len(conf.select_) > 0 {
 		db = db.Select(conf.select_)
 	}
