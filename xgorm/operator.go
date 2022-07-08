@@ -103,7 +103,7 @@ func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface
 }
 
 func (o *Operator) FindByID(id uint, destination interface{}, options ...FindByIDOption) error {
-	conf := newFindByIDConfig(options...)
+	conf := newFindByIDOptions(options...)
 	db := o.getDB()
 	if conf.unscoped {
 		db = db.Unscoped()
@@ -132,7 +132,7 @@ func (o *Operator) Last(destination interface{}, options ...FindOneOption) error
 func (o *Operator) Search(destination interface{}, options ...SearchOption) CountResult {
 	var count int64
 	db := o.getDB()
-	conf := newSearchConfig(options...)
+	conf := newSearchOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
 	}
@@ -170,7 +170,7 @@ func (o *Operator) Search(destination interface{}, options ...SearchOption) Coun
 func (o *Operator) Count(options ...CountOption) CountResult {
 	var count int64
 	db := o.getDB()
-	conf := newCountConfig(options...)
+	conf := newCountOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
 	}
@@ -198,7 +198,7 @@ func (o *Operator) getDB() *gorm.DB {
 
 func (o *Operator) getDBWithFindOneOptions(options ...FindOneOption) *gorm.DB {
 	db := o.getDB()
-	conf := newFindOneConfig(options...)
+	conf := newFindOneOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
 	}

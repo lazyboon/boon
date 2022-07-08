@@ -137,45 +137,45 @@ func (withConfig) GormConfig(conf *gorm.Config) ConfigOption {
 
 //----------------------------------------------------------------------------------------------------------------------
 
-type findByIDConfig struct {
+type findByIDOptions struct {
 	select_  []string
 	unselect []string
 	unscoped bool
 }
 
-func newFindByIDConfig(options ...FindByIDOption) *findByIDConfig {
-	c := &findByIDConfig{}
+func newFindByIDOptions(options ...FindByIDOption) *findByIDOptions {
+	c := &findByIDOptions{}
 	for _, option := range options {
 		option(c)
 	}
 	return c
 }
 
-type FindByIDOption func(c *findByIDConfig)
+type FindByIDOption func(c *findByIDOptions)
 
 type withFindByID struct{}
 
 func (withFindByID) Select(fields ...string) FindByIDOption {
-	return func(c *findByIDConfig) {
+	return func(c *findByIDOptions) {
 		c.select_ = fields
 	}
 }
 
 func (withFindByID) Unselect(fields ...string) FindByIDOption {
-	return func(c *findByIDConfig) {
+	return func(c *findByIDOptions) {
 		c.unselect = fields
 	}
 }
 
 func (withFindByID) Unscoped(v bool) FindByIDOption {
-	return func(c *findByIDConfig) {
+	return func(c *findByIDOptions) {
 		c.unscoped = v
 	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-type findOneConfig struct {
+type findOneOptions struct {
 	select_  []string
 	unselect []string
 	where    *Condition
@@ -185,63 +185,63 @@ type findOneConfig struct {
 	unscoped bool
 }
 
-func newFindOneConfig(options ...FindOneOption) *findOneConfig {
-	c := &findOneConfig{}
+func newFindOneOptions(options ...FindOneOption) *findOneOptions {
+	c := &findOneOptions{}
 	for _, option := range options {
 		option(c)
 	}
 	return c
 }
 
-type FindOneOption func(c *findOneConfig)
+type FindOneOption func(c *findOneOptions)
 
 type withFindOne struct{}
 
 func (withFindOne) Select(fields ...string) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.select_ = fields
 	}
 }
 
 func (withFindOne) Unselect(fields ...string) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.unselect = fields
 	}
 }
 
 func (withFindOne) Where(condition *Condition) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.where = condition
 	}
 }
 
 func (withFindOne) Having(condition *Condition) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.having = condition
 	}
 }
 
 func (withFindOne) Group(group string) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.group = group
 	}
 }
 
 func (withFindOne) Order(order string) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.order = order
 	}
 }
 
 func (withFindOne) Unscoped(v bool) FindOneOption {
-	return func(c *findOneConfig) {
+	return func(c *findOneOptions) {
 		c.unscoped = v
 	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-type searchConfig struct {
+type searchOptions struct {
 	limit    uint
 	page     uint
 	select_  []string
@@ -254,8 +254,8 @@ type searchConfig struct {
 	unscoped bool
 }
 
-func newSearchConfig(options ...SearchOption) *searchConfig {
-	c := &searchConfig{
+func newSearchOptions(options ...SearchOption) *searchOptions {
+	c := &searchOptions{
 		limit: 10,
 		page:  1,
 		count: true,
@@ -266,111 +266,111 @@ func newSearchConfig(options ...SearchOption) *searchConfig {
 	return c
 }
 
-type SearchOption func(c *searchConfig)
+type SearchOption func(c *searchOptions)
 
 type withSearch struct{}
 
 func (withSearch) Limit(limit uint) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.limit = limit
 	}
 }
 
 func (withSearch) Page(page uint) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.page = page
 	}
 }
 
 func (withSearch) Select(fields ...string) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.select_ = fields
 	}
 }
 
 func (withSearch) Unselect(fields ...string) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.unselect = fields
 	}
 }
 
 func (withSearch) Where(condition *Condition) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.where = condition
 	}
 }
 
 func (withSearch) Having(condition *Condition) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.having = condition
 	}
 }
 
 func (withSearch) Group(group string) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.group = group
 	}
 }
 
 func (withSearch) Order(order string) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.order = order
 	}
 }
 
 func (withSearch) Count(count bool) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.count = count
 	}
 }
 
 func (withSearch) Unscoped(v bool) SearchOption {
-	return func(c *searchConfig) {
+	return func(c *searchOptions) {
 		c.unscoped = v
 	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-type countConfig struct {
+type countOptions struct {
 	where    *Condition
 	having   *Condition
 	group    string
 	unscoped bool
 }
 
-func newCountConfig(options ...CountOption) *countConfig {
-	c := &countConfig{}
+func newCountOptions(options ...CountOption) *countOptions {
+	c := &countOptions{}
 	for _, option := range options {
 		option(c)
 	}
 	return c
 }
 
-type CountOption func(c *countConfig)
+type CountOption func(c *countOptions)
 
 type withCount struct{}
 
 func (withCount) Where(condition *Condition) CountOption {
-	return func(c *countConfig) {
+	return func(c *countOptions) {
 		c.where = condition
 	}
 }
 
 func (withCount) Having(condition *Condition) CountOption {
-	return func(c *countConfig) {
+	return func(c *countOptions) {
 		c.having = condition
 	}
 }
 
 func (withCount) Group(group string) CountOption {
-	return func(c *countConfig) {
+	return func(c *countOptions) {
 		c.group = group
 	}
 }
 
 func (withCount) Unscoped(v bool) CountOption {
-	return func(c *countConfig) {
+	return func(c *countOptions) {
 		c.unscoped = v
 	}
 }

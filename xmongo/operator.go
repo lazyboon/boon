@@ -151,7 +151,7 @@ func (o *Operator) UpdateByQuery(condition map[string]interface{}, data map[stri
 
 func (o *Operator) FindByID(id ObjectID, destination interface{}, options ...FindByIDOption) error {
 	condition := map[string]interface{}{"_id": id}
-	conf := newFindByIDConfig(options...)
+	conf := newFindByIDOptions(options...)
 	if !conf.unscoped {
 		o.scoped(condition)
 	}
@@ -172,7 +172,7 @@ func (o *Operator) FindByID(id ObjectID, destination interface{}, options ...Fin
 }
 
 func (o *Operator) First(destination interface{}, options ...FindOneOption) error {
-	conf := newFindOneConfig(options...)
+	conf := newFindOneOptions(options...)
 	if !conf.unscoped {
 		o.scoped(conf.condition)
 	}
@@ -196,7 +196,7 @@ func (o *Operator) First(destination interface{}, options ...FindOneOption) erro
 }
 
 func (o *Operator) Search(destination interface{}, options ...SearchOption) CountResult {
-	conf := newSearchConfig(options...)
+	conf := newSearchOptions(options...)
 	if !conf.unscoped {
 		o.scoped(conf.condition)
 	}
@@ -246,7 +246,7 @@ func (o *Operator) Search(destination interface{}, options ...SearchOption) Coun
 }
 
 func (o *Operator) Count(options ...CountOption) CountResult {
-	conf := newCountConfig(options...)
+	conf := newCountOptions(options...)
 	if !conf.unscoped {
 		o.scoped(conf.condition)
 	}
