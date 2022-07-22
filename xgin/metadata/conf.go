@@ -7,7 +7,7 @@ var (
 //----------------------------------------------------------------------------------------------------------------------
 
 type config struct {
-	requestId     bool
+	requestID     bool
 	receiveTime   bool
 	responseTime  bool
 	serverName    string
@@ -28,9 +28,9 @@ type ConfigOption func(c *config)
 
 type withConfig struct{}
 
-func (withConfig) RequestId(b bool) ConfigOption {
+func (withConfig) RequestID(b bool) ConfigOption {
 	return func(c *config) {
-		c.requestId = b
+		c.requestID = b
 	}
 }
 

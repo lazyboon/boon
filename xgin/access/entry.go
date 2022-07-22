@@ -5,29 +5,29 @@ import (
 	"encoding/json"
 )
 
-type RequestEntry struct {
+type RequestEntity struct {
 	Header map[string]interface{} `json:"header,omitempty"`
 	Body   interface{}            `json:"body,omitempty"`
 }
 
-type ResponseEntry struct {
+type ResponseEntity struct {
 	Header map[string]interface{} `json:"header,omitempty"`
 	Body   interface{}            `json:"body,omitempty"`
 	Status int                    `json:"status,omitempty"`
 }
 
-type Entry struct {
-	Method     string         `json:"method,omitempty"`
-	Path       string         `json:"path,omitempty"`
-	RemoteAddr string         `json:"remote_addr,omitempty"`
-	Proto      string         `json:"proto,omitempty"`
-	Request    *RequestEntry  `json:"request,omitempty"`
-	Response   *ResponseEntry `json:"response,omitempty"`
-	Latency    string         `json:"latency,omitempty"`
-	RequestId  string         `json:"request_id,omitempty"`
+type Entity struct {
+	Method     string          `json:"method,omitempty"`
+	Path       string          `json:"path,omitempty"`
+	RemoteAddr string          `json:"remote_addr,omitempty"`
+	Proto      string          `json:"proto,omitempty"`
+	Request    *RequestEntity  `json:"request,omitempty"`
+	Response   *ResponseEntity `json:"response,omitempty"`
+	Latency    string          `json:"latency,omitempty"`
+	RequestID  string          `json:"request_id,omitempty"`
 }
 
-func (e *Entry) UnescapeHtmlJson() (string, error) {
+func (e *Entity) UnescapeHtmlJson() (string, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	jsonEncoder := json.NewEncoder(buffer)
 	jsonEncoder.SetEscapeHTML(false)
@@ -38,12 +38,12 @@ func (e *Entry) UnescapeHtmlJson() (string, error) {
 	return buffer.String(), nil
 }
 
-func (e *Entry) MustUnescapeHtmlJson() string {
+func (e *Entity) MustUnescapeHtmlJson() string {
 	ans, _ := e.UnescapeHtmlJson()
 	return ans
 }
 
-func (e *Entry) Json() (string, error) {
+func (e *Entity) Json() (string, error) {
 	raw, err := json.Marshal(e)
 	if err != nil {
 		return "", err
@@ -51,7 +51,7 @@ func (e *Entry) Json() (string, error) {
 	return string(raw), nil
 }
 
-func (e *Entry) MustJson() string {
+func (e *Entity) MustJson() string {
 	ans, _ := e.Json()
 	return ans
 }

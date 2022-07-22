@@ -58,10 +58,10 @@ type config struct {
 	*baseConfig
 	skipPaths    []string
 	specificPath map[string]*baseConfig
-	handler      func(entry *Entry)
+	handler      func(entity *Entity)
 }
 
-func newConfig(handler func(entry *Entry), options ...ConfigOption) *config {
+func newConfig(handler func(entity *Entity), options ...ConfigOption) *config {
 	c := &config{
 		baseConfig:   &baseConfig{},
 		skipPaths:    make([]string, 0),

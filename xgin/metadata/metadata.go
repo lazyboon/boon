@@ -16,10 +16,10 @@ func New(options ...ConfigOption) gin.HandlerFunc {
 			Body:           bytes.NewBufferString(""),
 			ResponseTime:   conf.responseTime,
 		}
-		if conf.requestId {
-			requestId := uuid.New().String()
-			ctx.Request.Header.Set("X-Request-Id", requestId)
-			ctx.Writer.Header().Set("X-Request-Id", requestId)
+		if conf.requestID {
+			requestID := uuid.New().String()
+			ctx.Request.Header.Set("X-Request-ID", requestID)
+			ctx.Writer.Header().Set("X-Request-ID", requestID)
 		}
 		if conf.receiveTime {
 			ctx.Writer.Header().Set("X-Receive-Time", start.Format(time.RFC3339Nano))

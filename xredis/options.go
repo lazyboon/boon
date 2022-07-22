@@ -3,8 +3,9 @@ package xredis
 import "time"
 
 var (
-	WithConfig = withConfig{}
-	WithLock   = withLock{}
+	WithConfig     = withConfig{}
+	WithLock       = withLock{}
+	WithDelayQueue = withDelayQueue{}
 )
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -41,6 +42,12 @@ func newConfig(options ...ConfigOption) *config {
 type ConfigOption func(c *config)
 
 type withConfig struct{}
+
+func (withConfig) Alias(alias string) ConfigOption {
+	return func(c *config) {
+		c.alias = alias
+	}
+}
 
 func (withConfig) Host(host string) ConfigOption {
 	return func(c *config) {
@@ -123,12 +130,14 @@ func (withConfig) MinIdleConn(count uint) ConfigOption {
 
 type lockOptions struct {
 	value           string
-	sleep           *time.Duration
 	blockingTimeout *time.Duration
+	backoff         IBackoff
 }
 
 func newLockOptions(options ...LockOption) *lockOptions {
-	c := &lockOptions{}
+	c := &lockOptions{
+		backoff: &ZeroBackoff{},
+	}
 	for _, option := range options {
 		option(c)
 	}
@@ -145,14 +154,55 @@ func (withLock) Value(value string) LockOption {
 	}
 }
 
-func (withLock) Sleep(sleep time.Duration) LockOption {
+func (withLock) Backoff(backoff IBackoff) LockOption {
 	return func(c *lockOptions) {
-		c.sleep = &sleep
+		c.backoff = backoff
 	}
 }
 
 func (withLock) BlockingTimeout(timeout time.Duration) LockOption {
 	return func(c *lockOptions) {
 		c.blockingTimeout = &timeout
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+type delayQueueOptions struct {
+	bucketCount      uint64
+	bucketPrefix     string
+	scheduleInterval time.Duration
+}
+
+func newDelayQueueOptions(options ...DelayQueueOption) *delayQueueOptions {
+	c := &delayQueueOptions{
+		bucketCount:  1,
+		bucketPrefix: "dq-bucket",
+	}
+	for _, option := range options {
+		option(c)
+	}
+	return c
+}
+
+type DelayQueueOption func(c *delayQueueOptions)
+
+type withDelayQueue struct{}
+
+func (withDelayQueue) BucketCount(count uint64) DelayQueueOption {
+	return func(c *delayQueueOptions) {
+		c.bucketCount = count
+	}
+}
+
+func (withDelayQueue) BucketPrefix(prefix string) DelayQueueOption {
+	return func(c *delayQueueOptions) {
+		c.bucketPrefix = prefix
+	}
+}
+
+func (withConfig) ScheduleInterval(interval time.Duration) DelayQueueOption {
+	return func(c *delayQueueOptions) {
+		c.scheduleInterval = interval
 	}
 }

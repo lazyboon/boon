@@ -53,25 +53,10 @@ type Lock struct {
 	token      string
 }
 
-func NewLock(client *redis.Client) *Lock {
-	return &Lock{
+func NewLock(ctx context.Context, client *redis.Client, key string, expiration time.Duration, options ...LockOption) (*Lock, error) {
+	l := &Lock{
 		client: client,
 	}
-}
-
-func (l *Lock) Key() string {
-	return l.key
-}
-
-func (l *Lock) Value() string {
-	return l.val
-}
-
-func (l *Lock) Token() string {
-	return l.token
-}
-
-func (l *Lock) Acquire(ctx context.Context, key string, expiration time.Duration, options ...LockOption) error {
 	// new mutex lock options
 	opts := newLockOptions(options...)
 
@@ -101,27 +86,42 @@ func (l *Lock) Acquire(ctx context.Context, key string, expiration time.Duration
 	defer timer.Stop()
 
 	value := fmt.Sprintf("%s%s", l.token, l.val)
+	var doCount uint
 	for {
-		ok, err := l.client.SetNX(ctx, key, value, timeout).Result()
+		ok, err := l.client.SetNX(ctx, key, value, expiration).Result()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if ok {
-			return nil
+			return l, nil
 		}
-		if time.Now().Add(*opts.sleep).Before(deadline) {
-			return ErrAcquireLock
+		doCount++
+		stop, duration := opts.backoff.Next(doCount)
+		if stop {
+			return nil, ErrAcquireLock
 		}
-
-		if opts.sleep != nil {
-			timer.Reset(*opts.sleep)
+		if time.Now().Add(duration).After(deadline) {
+			return nil, ErrAcquireLock
 		}
+		timer.Reset(duration)
 		select {
 		case <-ctx.Done():
-			return ErrAcquireLock
+			return nil, ErrAcquireLock
 		case <-timer.C:
 		}
 	}
+}
+
+func (l *Lock) Key() string {
+	return l.key
+}
+
+func (l *Lock) Value() string {
+	return l.val
+}
+
+func (l *Lock) Token() string {
+	return l.token
 }
 
 func (l *Lock) Release(ctx context.Context) error {

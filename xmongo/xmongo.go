@@ -15,6 +15,12 @@ var (
 	connectPoolSet map[string]struct{}
 )
 
+func InitWithConfigs(configs []*Config) {
+	for _, cfg := range configs {
+		AddConnectPool(cfg.ToOptions()...)
+	}
+}
+
 func AddConnectPool(options ...ConfigOption) {
 	lock.Lock()
 	defer lock.Unlock()

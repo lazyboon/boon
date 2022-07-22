@@ -5,13 +5,28 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v9"
 	"sync"
+	"time"
 )
 
 var (
 	lock           sync.RWMutex
-	instanceMap    map[string]*redis.Client
+	instanceMap    map[string]*Client
 	connectPoolSet map[string]struct{}
 )
+
+type Client struct {
+	*redis.Client
+}
+
+func (c *Client) AcquireLock(ctx context.Context, key string, expiration time.Duration, options ...LockOption) (*Lock, error) {
+	return NewLock(ctx, c.Client, key, expiration, options...)
+}
+
+func InitWithConfigs(configs []*Config) {
+	for _, cfg := range configs {
+		AddConnectPool(cfg.ToOptions()...)
+	}
+}
 
 func AddConnectPool(options ...ConfigOption) {
 	lock.Lock()
@@ -46,10 +61,10 @@ func AddConnectPool(options ...ConfigOption) {
 	if err != nil {
 		panic(err)
 	}
-	instanceMap[conf.alias] = client
+	instanceMap[conf.alias] = &Client{Client: client}
 }
 
-func Connect(alias ...string) *redis.Client {
+func Connect(alias ...string) *Client {
 	k := ""
 	if len(alias) > 0 {
 		k = alias[len(alias)-1]
@@ -59,7 +74,7 @@ func Connect(alias ...string) *redis.Client {
 
 func initInstancesContainer() {
 	if instanceMap == nil {
-		instanceMap = make(map[string]*redis.Client)
+		instanceMap = make(map[string]*Client)
 	}
 	if connectPoolSet == nil {
 		connectPoolSet = make(map[string]struct{})

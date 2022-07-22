@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
+func New(handler func(entity *Entity), options ...ConfigOption) gin.HandlerFunc {
 	if handler == nil {
 		panic("access handler must not nil")
 	}
@@ -32,19 +32,19 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 		ctx.Writer = writer
 		start := time.Now()
 
-		requestId := ctx.Request.Header.Get("X-Request-Id")
-		if requestId == "" {
-			requestId = uuid.New().String()
-			ctx.Request.Header.Set("X-Request-Id", requestId)
-			ctx.Writer.Header().Set("X-Request-Id", requestId)
+		requestID := ctx.Request.Header.Get("X-Request-ID")
+		if requestID == "" {
+			requestID = uuid.New().String()
+			ctx.Request.Header.Set("X-Request-ID", requestID)
+			ctx.Writer.Header().Set("X-Request-ID", requestID)
 		}
 
 		// request
-		buildRequestEntry := func(requestHeader bool, requestBody bool) *RequestEntry {
+		buildRequestEntity := func(requestHeader bool, requestBody bool) *RequestEntity {
 			if !requestHeader && !requestBody {
 				return nil
 			}
-			ans := &RequestEntry{}
+			ans := &RequestEntity{}
 			if requestHeader {
 				ans.Header = httpHeaderToMap(ctx.Request.Header)
 			}
@@ -69,18 +69,18 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 			}
 			return ans
 		}
-		var requestEntry *RequestEntry
+		var requestEntity *RequestEntity
 		if c, ok := conf.specificPath[mps]; ok {
-			requestEntry = buildRequestEntry(c.requestHeader, c.requestBody)
+			requestEntity = buildRequestEntity(c.requestHeader, c.requestBody)
 		} else {
-			requestEntry = buildRequestEntry(conf.requestHeader, conf.requestBody)
+			requestEntity = buildRequestEntity(conf.requestHeader, conf.requestBody)
 		}
 
 		ctx.Next()
 
 		// response
-		buildResponseEntry := func(responseHeader bool, responseBody bool) *ResponseEntry {
-			ans := &ResponseEntry{
+		buildResponseEntity := func(responseHeader bool, responseBody bool) *ResponseEntity {
+			ans := &ResponseEntity{
 				Status: writer.Status(),
 			}
 			if responseHeader {
@@ -92,27 +92,27 @@ func New(handler func(entry *Entry), options ...ConfigOption) gin.HandlerFunc {
 			return ans
 		}
 
-		var responseEntry *ResponseEntry
+		var responseEntity *ResponseEntity
 		if c, ok := conf.specificPath[mps]; ok {
-			responseEntry = buildResponseEntry(c.responseHeader, c.responseBody)
+			responseEntity = buildResponseEntity(c.responseHeader, c.responseBody)
 		} else {
-			responseEntry = buildResponseEntry(conf.responseHeader, conf.responseBody)
+			responseEntity = buildResponseEntity(conf.responseHeader, conf.responseBody)
 		}
 
-		// entry
+		// entity
 		latency := time.Now().Sub(start)
 		if latency > time.Minute {
 			latency = latency - latency%time.Second
 		}
-		conf.handler(&Entry{
+		conf.handler(&Entity{
 			Method:     ctx.Request.Method,
 			Path:       ctx.Request.RequestURI,
 			RemoteAddr: ctx.Request.RemoteAddr,
 			Proto:      ctx.Request.Proto,
-			Request:    requestEntry,
-			Response:   responseEntry,
+			Request:    requestEntity,
+			Response:   responseEntity,
 			Latency:    fmt.Sprintf("%s", latency),
-			RequestId:  requestId,
+			RequestID:  requestID,
 		})
 	}
 }
