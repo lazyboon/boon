@@ -276,6 +276,9 @@ func (d *Delay) listenZSetTopic(topic string) {
 
 func (d *Delay) listenReadyList() {
 	go func() {
+		if len(d.listenTopics) == 0 {
+			return
+		}
 		topics := make([]string, len(d.listenTopics))
 		for idx, topic := range d.listenTopics {
 			topics[idx] = d.topicReadyListKey(topic)
@@ -311,12 +314,17 @@ func (d *Delay) getJob(keys ...string) ([]*Job, error) {
 	}
 	ans := make([]*Job, 0, len(result))
 	for _, item := range result {
-		job := &jobWrapper{}
-		err = json.Unmarshal([]byte(item.(string)), job)
-		if err != nil {
-			return nil, fmt.Errorf("%s, %s", ErrDelayGetJobUnmarshal, err.Error())
+		if item == nil {
+			continue
 		}
-		ans = append(ans, &job.Job)
+		if row, ok := item.(string); ok {
+			job := &jobWrapper{}
+			err = json.Unmarshal([]byte(row), job)
+			if err != nil {
+				return nil, fmt.Errorf("%s, %s", ErrDelayGetJobUnmarshal, err.Error())
+			}
+			ans = append(ans, &job.Job)
+		}
 	}
 	return ans, nil
 }
