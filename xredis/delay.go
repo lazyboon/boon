@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	ErrDelayQueueListenTopic     = errors.New("listen topic error")
-	ErrDelayQueueListenReady     = errors.New("listen ready error")
-	ErrDelayQueueGetJobFromPool  = errors.New("get job from pool error")
-	ErrDelayQueueGetJobUnmarshal = errors.New("get job unmarshal error")
+	ErrDelayListenTopic     = errors.New("listen topic error")
+	ErrDelayListenReady     = errors.New("listen ready error")
+	ErrDelayGetJobFromPool  = errors.New("get job from pool error")
+	ErrDelayGetJobUnmarshal = errors.New("get job unmarshal error")
 )
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var (
 	// luaDelayQueueAddJobScript
@@ -67,27 +69,32 @@ var (
 	`)
 
 	// luaDelayQueueDeleteJobScript
-	// KEYS[1] - topic key
-	// KEYS[2] - job key
+	// KEYS - topic keys
+	// ARGV - job keys
 	luaDelayQueueDeleteJobScript = redis.NewScript(`
-		redis.call('ZREM', KEYS[1], KEYS[2])
-		redis.call('DEL', KEYS[2])
+		for k, v in pairs(KEYS) do
+			redis.call('ZREM', v, ARGV[k])
+			redis.call('DEL', ARGV[k])
+		end
 		return 1
 	`)
 
 	// luaDelayQueueDeleteErrorJobScript
-	// KEYS[1] - error jobs key
-	// KEYS[2] - job key
+	// KEYS - error jobs keys
+	// ARGV - job keys
 	luaDelayQueueDeleteErrorJobScript = redis.NewScript(`
-		redis.call('SREM', KEYS[1], KEYS[2])
-		redis.call('DEL', KEYS[2])
+		for k, v in pairs(KEYS) do
+			redis.call('SREM', v, ARGV[k])
+			redis.call('DEL', ARGV[k])
+		end
 		return 1
 	`)
 )
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type Job struct {
-	Topic string `json:"topic"`
-	ID    string `json:"id"`
+	JobID
 	Delay int64  `json:"delay"`
 	Body  string `json:"body"`
 	Retry int64  `json:"retry"`
@@ -98,6 +105,25 @@ type jobWrapper struct {
 	Job
 	Done int64 `json:"done"`
 }
+
+type JobID struct {
+	Topic string `json:"topic"`
+	ID    string `json:"id"`
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type IDelayer interface {
+	Upsert(jobs ...*Job) error
+	Delete(ids ...*JobID) error
+	Commit(ids ...*JobID) error
+	Get(id ...*JobID) ([]*Job, error)
+	Reader() <-chan *Job
+	RandomGetErrorJobs(topic string, count int64) ([]*Job, error)
+	RemoveErrorJob(ids ...*JobID) error
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Delay struct {
 	client    *Client
@@ -118,7 +144,7 @@ func NewDelay(client *Client, options ...DelayOption) *Delay {
 	return d
 }
 
-func (d *Delay) Publish(jobs ...*Job) error {
+func (d *Delay) Upsert(jobs ...*Job) error {
 	size := len(jobs)
 	keys := make([]string, 0, size)
 	argv := make([]interface{}, 0, size)
@@ -150,34 +176,61 @@ func (d *Delay) Publish(jobs ...*Job) error {
 	return nil
 }
 
-func (d *Delay) Commit(topic string, id string) error {
-	_, err := luaDelayQueueDeleteJobScript.Run(context.TODO(), d.client, []string{d.topicZSetKey(topic), d.poolJobStringKey(topic, id)}).Result()
+func (d *Delay) Delete(ids ...*JobID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(ids))
+	args := make([]interface{}, 0, len(ids))
+	for _, item := range ids {
+		keys = append(keys, d.topicZSetKey(item.Topic))
+		args = append(args, d.poolJobStringKey(item.Topic, item.ID))
+	}
+	_, err := luaDelayQueueDeleteJobScript.Run(context.TODO(), d.client, keys, args...).Result()
 	return err
 }
 
-func (d *Delay) Ready() <-chan *Job {
+func (d *Delay) Commit(ids ...*JobID) error {
+	return d.Delete(ids...)
+}
+
+func (d *Delay) Get(ids ...*JobID) ([]*Job, error) {
+	if len(ids) == 0 {
+		return nil, redis.Nil
+	}
+	keys := make([]string, 0, len(ids))
+	for _, item := range ids {
+		keys = append(keys, d.poolJobStringKey(item.Topic, item.ID))
+	}
+	return d.getJob(keys...)
+}
+
+func (d *Delay) Reader() <-chan *Job {
 	return d.readyChan
 }
 
-func (d *Delay) RandomGetErrorJob(topic string) (*Job, error) {
-	data, err := d.client.SRandMemberN(context.TODO(), d.topicErrorSetKey(topic), 1).Result()
+func (d *Delay) RandomGetErrorJobs(topic string, count int64) ([]*Job, error) {
+	keys, err := d.client.SRandMemberN(context.TODO(), d.topicErrorSetKey(topic), count).Result()
 	if err != nil {
 		return nil, err
 	}
-	if len(data) == 0 {
+	if len(keys) == 0 {
 		return nil, redis.Nil
 	}
-	raw, err := d.client.Get(context.TODO(), data[0]).Bytes()
-	job := &jobWrapper{}
-	err = json.Unmarshal(raw, job)
-	if err != nil {
-		return nil, err
-	}
-	return &job.Job, nil
+	return d.getJob(keys...)
 }
 
-func (d *Delay) RemoveErrorJob(topic string, id string) error {
-	_, err := luaDelayQueueDeleteErrorJobScript.Run(context.TODO(), d.client, []string{d.topicErrorSetKey(topic), d.poolJobStringKey(topic, id)}).Result()
+func (d *Delay) RemoveErrorJob(ids ...*JobID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(ids))
+	args := make([]interface{}, 0, len(ids))
+	for _, item := range ids {
+		keys = append(keys, d.topicErrorSetKey(item.Topic))
+		args = append(args, d.poolJobStringKey(item.Topic, item.ID))
+	}
+	_, err := luaDelayQueueDeleteErrorJobScript.Run(context.TODO(), d.client, keys, args...).Result()
 	return err
 }
 
@@ -215,7 +268,7 @@ func (d *Delay) listenZSetTopic(topic string) {
 		keys := []string{d.topicZSetKey(topic), d.topicReadyListKey(topic), d.topicErrorSetKey(topic)}
 		_, err := luaDelayQueueMoveToReadyScript.Run(context.TODO(), d.client, keys, fmt.Sprintf("%d", time.Now().Unix())).Result()
 		if err != nil && d.errorCallback != nil {
-			d.errorCallback(fmt.Errorf("%w, %s", ErrDelayQueueListenTopic, err.Error()))
+			d.errorCallback(fmt.Errorf("%w, %s", ErrDelayListenTopic, err.Error()))
 		}
 		working = false
 	}
@@ -231,29 +284,39 @@ func (d *Delay) listenReadyList() {
 			result, err := d.client.BRPop(context.TODO(), time.Duration(10)*time.Second, topics...).Result()
 			if err != nil {
 				if !errors.Is(redis.Nil, err) && d.errorCallback != nil {
-					d.errorCallback(fmt.Errorf("%w, %s", ErrDelayQueueListenReady, err.Error()))
+					d.errorCallback(fmt.Errorf("%w, %s", ErrDelayListenReady, err.Error()))
 				}
 				continue
 			}
-			job, err := d.getJob(result[1])
+			jobs, err := d.getJob(result[1])
 			if err != nil && d.errorCallback != nil {
 				d.errorCallback(err)
 				continue
 			}
-			d.readyChan <- job
+			if len(jobs) == 0 {
+				continue
+			}
+			d.readyChan <- jobs[0]
 		}
 	}()
 }
 
-func (d *Delay) getJob(key string) (*Job, error) {
-	raw, err := d.client.Get(context.TODO(), key).Bytes()
+func (d *Delay) getJob(keys ...string) ([]*Job, error) {
+	result, err := d.client.MGet(context.TODO(), keys...).Result()
 	if err != nil {
-		return nil, fmt.Errorf("%w, %s", ErrDelayQueueGetJobFromPool, err.Error())
+		if !errors.Is(err, redis.Nil) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("%w, %s", ErrDelayGetJobFromPool, err.Error())
 	}
-	job := &jobWrapper{}
-	err = json.Unmarshal(raw, job)
-	if err != nil {
-		return nil, fmt.Errorf("%s, %s", ErrDelayQueueGetJobUnmarshal, err.Error())
+	ans := make([]*Job, 0, len(result))
+	for _, item := range result {
+		job := &jobWrapper{}
+		err = json.Unmarshal([]byte(item.(string)), job)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %s", ErrDelayGetJobUnmarshal, err.Error())
+		}
+		ans = append(ans, &job.Job)
 	}
-	return &job.Job, nil
+	return ans, nil
 }
