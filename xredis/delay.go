@@ -69,23 +69,18 @@ var (
 	`)
 
 	// luaDelayQueueDeleteJobScript
-	// KEYS - topic keys
-	// ARGV - job keys
+	// KEYS - topic zset key, error set key, job string key ...
 	luaDelayQueueDeleteJobScript = redis.NewScript(`
 		for k, v in pairs(KEYS) do
-			redis.call('ZREM', v, ARGV[k])
-			redis.call('DEL', ARGV[k])
-		end
-		return 1
-	`)
-
-	// luaDelayQueueDeleteErrorJobScript
-	// KEYS - error jobs keys
-	// ARGV - job keys
-	luaDelayQueueDeleteErrorJobScript = redis.NewScript(`
-		for k, v in pairs(KEYS) do
-			redis.call('SREM', v, ARGV[k])
-			redis.call('DEL', ARGV[k])
+			local m = (k - 1) % 3
+			local n = math.floor((k - 1) / 3)
+			if m == 0 then
+				redis.call('ZREM', KEYS[n*3+1], KEYS[n*3+3])
+			elseif m == 1 then
+				redis.call('SREM', KEYS[n*3+2], KEYS[n*3+3])
+			else
+				redis.call('DEL', KEYS[n*3+3])
+			end
 		end
 		return 1
 	`)
@@ -120,7 +115,6 @@ type IDelayer interface {
 	Get(id ...*JobID) ([]*Job, error)
 	Reader() <-chan *Job
 	RandomGetErrorJobs(topic string, count int64) ([]*Job, error)
-	RemoveErrorJob(ids ...*JobID) error
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,13 +174,13 @@ func (d *Delay) Delete(ids ...*JobID) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	keys := make([]string, 0, len(ids))
-	args := make([]interface{}, 0, len(ids))
+	keys := make([]string, 0, len(ids)*3)
 	for _, item := range ids {
 		keys = append(keys, d.topicZSetKey(item.Topic))
-		args = append(args, d.poolJobStringKey(item.Topic, item.ID))
+		keys = append(keys, d.topicErrorSetKey(item.Topic))
+		keys = append(keys, d.poolJobStringKey(item.Topic, item.ID))
 	}
-	_, err := luaDelayQueueDeleteJobScript.Run(context.TODO(), d.client, keys, args...).Result()
+	_, err := luaDelayQueueDeleteJobScript.Run(context.TODO(), d.client, keys).Result()
 	return err
 }
 
@@ -218,20 +212,6 @@ func (d *Delay) RandomGetErrorJobs(topic string, count int64) ([]*Job, error) {
 		return nil, redis.Nil
 	}
 	return d.getJob(keys...)
-}
-
-func (d *Delay) RemoveErrorJob(ids ...*JobID) error {
-	if len(ids) == 0 {
-		return nil
-	}
-	keys := make([]string, 0, len(ids))
-	args := make([]interface{}, 0, len(ids))
-	for _, item := range ids {
-		keys = append(keys, d.topicErrorSetKey(item.Topic))
-		args = append(args, d.poolJobStringKey(item.Topic, item.ID))
-	}
-	_, err := luaDelayQueueDeleteErrorJobScript.Run(context.TODO(), d.client, keys, args...).Result()
-	return err
 }
 
 func (d *Delay) poolJobStringKey(topic string, id string) string {
