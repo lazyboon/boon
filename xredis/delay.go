@@ -88,8 +88,20 @@ var (
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+type JobID struct {
+	Topic string `json:"topic"`
+	ID    string `json:"id"`
+}
+
+func NewJobID(topic string, id string) *JobID {
+	return &JobID{
+		Topic: topic,
+		ID:    id,
+	}
+}
+
 type Job struct {
-	JobID
+	*JobID
 	Delay int64  `json:"delay"`
 	Body  string `json:"body"`
 	Retry int64  `json:"retry"`
@@ -99,11 +111,6 @@ type Job struct {
 type jobWrapper struct {
 	Job
 	Done int64 `json:"done"`
-}
-
-type JobID struct {
-	Topic string `json:"topic"`
-	ID    string `json:"id"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
