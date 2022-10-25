@@ -64,12 +64,6 @@ type Operator struct {
 }
 
 func NewOperator(db *gorm.DB, table interface{}) *Operator {
-	switch table.(type) {
-	case string:
-		db = db.Table(table.(string))
-	default:
-		db = db.Model(table)
-	}
 	return &Operator{
 		DB:    db,
 		table: table,
@@ -77,19 +71,19 @@ func NewOperator(db *gorm.DB, table interface{}) *Operator {
 }
 
 func (o *Operator) Create(md interface{}) *Result {
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		Create(md),
 	)
 }
 
 func (o *Operator) Creates(mds interface{}, batchSize int) *Result {
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		CreateInBatches(mds, batchSize),
 	)
 }
 
 func (o *Operator) DeleteByID(id uint) *Result {
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		Where("id = ?", id).Delete(nil),
 	)
 }
@@ -98,13 +92,13 @@ func (o *Operator) DeleteByQuery(condition *Condition) *Result {
 	if condition == nil {
 		return newResult(errors.New("delete by query, condition can't nil"), 0)
 	}
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		Where(condition.Query, condition.Args...).Delete(nil),
 	)
 }
 
 func (o *Operator) UpdateByID(id uint, data map[string]interface{}) *Result {
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		Where("id = ?", id).
 		Updates(data),
 	)
@@ -114,7 +108,7 @@ func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface
 	if condition == nil {
 		return newResult(errors.New("update by query, condition can't nil"), 0)
 	}
-	return newResultByDB(o.DB.
+	return newResultByDB(o.getDB().
 		Where(condition.Query, condition.Args...).
 		Updates(data),
 	)
@@ -122,7 +116,7 @@ func (o *Operator) UpdateByQuery(condition *Condition, data map[string]interface
 
 func (o *Operator) FindByID(id uint, destination interface{}, options ...FindByIDOption) error {
 	conf := newFindByIDOptions(options...)
-	db := o.DB
+	db := o.getDB()
 	if conf.unscoped {
 		db = db.Unscoped()
 	}
@@ -149,7 +143,7 @@ func (o *Operator) Last(destination interface{}, options ...FindOneOption) error
 
 func (o *Operator) Search(destination interface{}, options ...SearchOption) *CountResult {
 	var count int64
-	db := o.DB
+	db := o.getDB()
 	conf := newSearchOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
@@ -187,7 +181,7 @@ func (o *Operator) Search(destination interface{}, options ...SearchOption) *Cou
 
 func (o *Operator) Count(options ...CountOption) *CountResult {
 	var count int64
-	db := o.DB
+	db := o.getDB()
 	conf := newCountOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
@@ -206,7 +200,7 @@ func (o *Operator) Count(options ...CountOption) *CountResult {
 }
 
 func (o *Operator) getDBWithFindOneOptions(options ...FindOneOption) *gorm.DB {
-	db := o.DB
+	db := o.getDB()
 	conf := newFindOneOptions(options...)
 	if conf.unscoped {
 		db = db.Unscoped()
@@ -230,4 +224,13 @@ func (o *Operator) getDBWithFindOneOptions(options ...FindOneOption) *gorm.DB {
 		db = db.Order(conf.order)
 	}
 	return db
+}
+
+func (o *Operator) getDB() *gorm.DB {
+	switch o.table.(type) {
+	case string:
+		return o.DB.Table(o.table.(string))
+	default:
+		return o.DB.Model(o.table)
+	}
 }
