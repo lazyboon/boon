@@ -69,6 +69,9 @@ func AddConnectPool(options ...ConfigOption) {
 	if conf.connMaxIdleTime != nil {
 		sqlDB.SetConnMaxIdleTime(*conf.connMaxIdleTime)
 	}
+	if conf.gormConfig != nil {
+		db.Config = conf.gormConfig
+	}
 	instanceMap[conf.alias] = db
 }
 
