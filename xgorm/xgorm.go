@@ -13,9 +13,14 @@ var (
 	connectPoolSet map[string]struct{}
 )
 
-func InitWithConfigs(configs []*Config) {
+func InitWithConfigs(configs []*Config, cs ...map[string]*gorm.Config) {
+	m := mergeGormConfig(cs...)
 	for _, cfg := range configs {
-		AddConnectPool(cfg.ToOptions()...)
+		opts := cfg.ToOptions()
+		if c, ok := m[cfg.Alias]; ok {
+			opts = append(opts, WithConfig.GormConfig(c))
+		}
+		AddConnectPool(opts...)
 	}
 }
 
@@ -69,9 +74,6 @@ func AddConnectPool(options ...ConfigOption) {
 	if conf.connMaxIdleTime != nil {
 		sqlDB.SetConnMaxIdleTime(*conf.connMaxIdleTime)
 	}
-	if conf.gormConfig != nil {
-		db.Config = conf.gormConfig
-	}
 	instanceMap[conf.alias] = db
 }
 
@@ -94,4 +96,14 @@ func initInstancesContainer() {
 
 func connectPoolKey(c *config) string {
 	return fmt.Sprintf("%s+%d+%s", c.host, c.port, c.db)
+}
+
+func mergeGormConfig(cs ...map[string]*gorm.Config) map[string]*gorm.Config {
+	ans := map[string]*gorm.Config{}
+	for _, item := range cs {
+		for k, v := range item {
+			ans[k] = v
+		}
+	}
+	return ans
 }
