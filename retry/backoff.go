@@ -6,65 +6,67 @@ import (
 )
 
 type IBackoff interface {
-	Next(count int) time.Duration
+	Next(count int) (stop bool, duration time.Duration)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ZeroBackoff struct{}
-
-func NewZeroBackoff() *ZeroBackoff {
-	return &ZeroBackoff{}
+type ZeroBackoff struct {
+	Count int
 }
 
-func (z *ZeroBackoff) Next(_ int) time.Duration {
-	return 0
+func NewZeroBackoff(count int) *ZeroBackoff {
+	return &ZeroBackoff{Count: count}
+}
+
+func (z *ZeroBackoff) Next(cnt int) (bool, time.Duration) {
+	return cnt > z.Count, 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type AvgBackoff struct {
-	Time time.Duration
+	Count int
+	Time  time.Duration
 }
 
-func NewAvgBackoff(t time.Duration) *AvgBackoff {
-	return &AvgBackoff{Time: t}
+func NewAvgBackoff(cnt int, t time.Duration) *AvgBackoff {
+	return &AvgBackoff{Count: cnt, Time: t}
 }
 
-func (z *AvgBackoff) Next(_ int) time.Duration {
-	return z.Time
+func (a *AvgBackoff) Next(cnt int) (bool, time.Duration) {
+	return cnt > a.Count, a.Time
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ArithmeticBackoff Arithmetic Sequence backoff
 type ArithmeticBackoff struct {
-	D time.Duration
+	Count int
+	D     time.Duration
 }
 
-func NewArithmeticBackoff(d time.Duration) *ArithmeticBackoff {
-	return &ArithmeticBackoff{D: d}
+func NewArithmeticBackoff(cnt int, d time.Duration) *ArithmeticBackoff {
+	return &ArithmeticBackoff{Count: cnt, D: d}
 }
 
-func (a *ArithmeticBackoff) Next(count int) time.Duration {
-	return time.Duration(count-1) * a.D
+func (a *ArithmeticBackoff) Next(cnt int) (bool, time.Duration) {
+	return cnt > a.Count, time.Duration(cnt-1) * a.D
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // GeometricBackoff Geometric Sequence backoff
 type GeometricBackoff struct {
+	Count int
 	First time.Duration
 	Q     float64
 }
 
-func NewGeometricBackoff(first time.Duration, q float64) *GeometricBackoff {
-	return &GeometricBackoff{First: first, Q: q}
+func NewGeometricBackoff(cnt int, first time.Duration, q float64) *GeometricBackoff {
+	return &GeometricBackoff{Count: cnt, First: first, Q: q}
 }
 
-func (g *GeometricBackoff) Next(count int) time.Duration {
-	if count < 0 {
-		count = 0
-	}
-	return g.First * time.Duration(math.Pow(g.Q, float64(count)))
+func (g *GeometricBackoff) Next(cnt int) (bool, time.Duration) {
+	return cnt > g.Count, g.First * time.Duration(math.Pow(g.Q, float64(cnt)))
 }

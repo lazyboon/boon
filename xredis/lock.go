@@ -86,7 +86,7 @@ func NewLock(ctx context.Context, client *redis.Client, key string, expiration t
 	defer timer.Stop()
 
 	value := fmt.Sprintf("%s%s", l.token, l.val)
-	var doCount uint
+	var doCount int
 	for {
 		ok, err := l.client.SetNX(ctx, key, value, expiration).Result()
 		if err != nil {

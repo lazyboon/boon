@@ -3,17 +3,10 @@ package retry
 import "time"
 
 type options struct {
-	count   int
 	backoff IBackoff
 }
 
 type Option func(o *options)
-
-func WithCount(c int) Option {
-	return func(o *options) {
-		o.count = c
-	}
-}
 
 func WithBackoff(backoff IBackoff) Option {
 	return func(o *options) {
@@ -32,14 +25,13 @@ func Do(task func(c int) error, opts ...Option) error {
 		if err == nil {
 			return nil
 		}
-		if i > o.count {
-			break
-		}
-		var sleep time.Duration
 		if o.backoff != nil {
-			sleep = o.backoff.Next(i)
+			stop, sleep := o.backoff.Next(i)
+			if stop {
+				break
+			}
+			time.Sleep(sleep)
 		}
-		time.Sleep(sleep)
 	}
 	return err
 }

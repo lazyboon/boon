@@ -1,6 +1,9 @@
 package xredis
 
-import "time"
+import (
+	"github.com/lazyboon/boon/retry"
+	"time"
+)
 
 type Options struct {
 	Config withConfig
@@ -143,12 +146,12 @@ func (withConfig) ConnMaxLifetime(duration time.Duration) ConfigOption {
 type lockOptions struct {
 	value           string
 	blockingTimeout *time.Duration
-	backoff         IBackoff
+	backoff         retry.IBackoff
 }
 
 func newLockOptions(options ...LockOption) *lockOptions {
 	c := &lockOptions{
-		backoff: &ZeroBackoff{},
+		backoff: &retry.ZeroBackoff{},
 	}
 	for _, option := range options {
 		option(c)
@@ -166,7 +169,7 @@ func (withLock) Value(value string) LockOption {
 	}
 }
 
-func (withLock) Backoff(backoff IBackoff) LockOption {
+func (withLock) Backoff(backoff retry.IBackoff) LockOption {
 	return func(c *lockOptions) {
 		c.backoff = backoff
 	}
