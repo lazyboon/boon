@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	Alias           string `json:"alias"`
+	Drive           string `json:"drive"`
 	Host            string `json:"host"`
 	Port            uint   `json:"port"`
 	DB              string `json:"db"`
@@ -23,6 +24,9 @@ func (c *Config) ToOptions() []ConfigOption {
 	ans := make([]ConfigOption, 0)
 	if c.Alias != "" {
 		ans = append(ans, WithConfig.Alias(c.Alias))
+	}
+	if c.Drive != "" {
+		ans = append(ans, WithConfig.Drive(c.Drive))
 	}
 	if c.Host != "" {
 		ans = append(ans, WithConfig.Host(c.Host))

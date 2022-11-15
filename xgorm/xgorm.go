@@ -3,6 +3,7 @@ package xgorm
 import (
 	"fmt"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"sync"
 )
@@ -38,16 +39,31 @@ func AddConnectPool(options ...ConfigOption) {
 	connectPoolSet[key] = struct{}{}
 
 	// add connect pool to instance map
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=true",
-		conf.user,
-		conf.password,
-		conf.host,
-		conf.port,
-		conf.db,
-		conf.charset,
-	)
-	db, err := gorm.Open(mysql.Open(dsn), conf.gormConfig)
+	var dial gorm.Dialector
+	switch conf.drive {
+	case "mysql":
+		dial = mysql.Open(fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=true",
+			conf.user,
+			conf.password,
+			conf.host,
+			conf.port,
+			conf.db,
+			conf.charset,
+		))
+	case "sqlserver":
+		dial = sqlserver.Open(fmt.Sprintf(
+			"sqlserver://%s:%s@%s:%d?database=%s",
+			conf.user,
+			conf.password,
+			conf.host,
+			conf.port,
+			conf.db,
+		))
+	default:
+		panic("add connect pool error: drive unknown")
+	}
+	db, err := gorm.Open(dial, conf.gormConfig)
 	if err != nil {
 		panic(err)
 	}

@@ -17,6 +17,7 @@ var (
 
 type config struct {
 	alias           string
+	drive           string
 	host            string
 	port            uint
 	db              string
@@ -33,6 +34,7 @@ type config struct {
 
 func newConfig(options ...ConfigOption) *config {
 	c := &config{
+		drive:           "mysql",
 		host:            "127.0.0.1",
 		port:            3306,
 		db:              "mysql",
@@ -60,6 +62,12 @@ type withConfig struct{}
 func (withConfig) Alias(alias string) ConfigOption {
 	return func(c *config) {
 		c.alias = alias
+	}
+}
+
+func (withConfig) Drive(drive string) ConfigOption {
+	return func(c *config) {
+		c.drive = drive
 	}
 }
 
