@@ -16,17 +16,17 @@ var (
 )
 
 func InitWithConfigs(configs []*Config) {
-	for _, cfg := range configs {
-		AddConnectPool(cfg.ToOptions()...)
+	for _, conf := range configs {
+		AddConnectPool(conf)
 	}
 }
 
-func AddConnectPool(options ...ConfigOption) {
+func AddConnectPool(conf *Config) {
 	lock.Lock()
 	defer lock.Unlock()
-
 	initInstancesContainer()
-	conf := newConfig(options...)
+	conf.init()
+
 	key := connectPoolKey(conf)
 
 	// check connection pool for conflicts, the same host、port can only appear once
@@ -37,22 +37,22 @@ func AddConnectPool(options ...ConfigOption) {
 
 	// build mongo options
 	opts := mongoOptions.Client()
-	opts.ApplyURI(fmt.Sprintf("mongodb://%s:%d", conf.host, conf.port))
+	opts.ApplyURI(fmt.Sprintf("mongodb://%s:%d", conf.Host, conf.Port))
 
-	if conf.username != nil && conf.password != nil {
+	if conf.Username != nil && conf.Password != nil {
 		opts.SetAuth(mongoOptions.Credential{
-			Username: *conf.username,
-			Password: *conf.password,
+			Username: *conf.Username,
+			Password: *conf.Password,
 		})
 	}
-	if conf.maxPoolSize != nil {
-		opts.SetMaxPoolSize(*conf.maxPoolSize)
+	if conf.MaxPoolSize != nil {
+		opts.SetMaxPoolSize(*conf.MaxPoolSize)
 	}
-	if conf.minPoolSize != nil {
-		opts.SetMinPoolSize(*conf.minPoolSize)
+	if conf.MinPoolSize != nil {
+		opts.SetMinPoolSize(*conf.MinPoolSize)
 	}
-	if conf.maxConnIdleTime != nil {
-		opts.SetMaxConnIdleTime(*conf.maxConnIdleTime)
+	if conf.MaxConnIdleTime != nil {
+		opts.SetMaxConnIdleTime(time.Duration(*conf.MaxConnIdleTime) * time.Second)
 	}
 
 	// create client
@@ -67,7 +67,7 @@ func AddConnectPool(options ...ConfigOption) {
 	if err != nil {
 		panic(err)
 	}
-	instanceMap[conf.alias] = client
+	instanceMap[conf.Alias] = client
 }
 
 func Connect(alias ...string) *mongo.Client {
@@ -87,6 +87,6 @@ func initInstancesContainer() {
 	}
 }
 
-func connectPoolKey(c *config) string {
-	return fmt.Sprintf("%s+%d", c.host, c.port)
+func connectPoolKey(c *Config) string {
+	return fmt.Sprintf("%s+%d", c.Host, c.Port)
 }

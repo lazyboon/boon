@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-func New(handler func(entity *Entity), options ...ConfigOption) gin.HandlerFunc {
+func New(handler func(entity *Entity), options ...*Option) gin.HandlerFunc {
 	if handler == nil {
 		panic("access handler must not nil")
 	}
-	conf := newConfig(handler, options...)
-	skip := sliceToSet(conf.skipPaths)
+	conf := mergeOptions(options...)
+	skip := sliceToSet(conf.SkipPaths)
 	return func(ctx *gin.Context) {
 		mps := NewMethodPath(ctx.Request.Method, ctx.FullPath()).String()
 		if _, ok := skip[mps]; ok {
@@ -70,10 +70,10 @@ func New(handler func(entity *Entity), options ...ConfigOption) gin.HandlerFunc 
 			return ans
 		}
 		var requestEntity *RequestEntity
-		if c, ok := conf.specificPath[mps]; ok {
-			requestEntity = buildRequestEntity(c.requestHeader, c.requestBody)
+		if c, ok := conf.SpecificPath[mps]; ok {
+			requestEntity = buildRequestEntity(c.RequestHeader != nil && *c.RequestHeader, c.RequestBody != nil && *c.RequestBody)
 		} else {
-			requestEntity = buildRequestEntity(conf.requestHeader, conf.requestBody)
+			requestEntity = buildRequestEntity(conf.RequestHeader != nil && *conf.RequestHeader, conf.RequestBody != nil && *conf.RequestBody)
 		}
 
 		ctx.Next()
@@ -93,10 +93,10 @@ func New(handler func(entity *Entity), options ...ConfigOption) gin.HandlerFunc 
 		}
 
 		var responseEntity *ResponseEntity
-		if c, ok := conf.specificPath[mps]; ok {
-			responseEntity = buildResponseEntity(c.responseHeader, c.responseBody)
+		if c, ok := conf.SpecificPath[mps]; ok {
+			responseEntity = buildResponseEntity(c.ResponseHeader != nil && *c.ResponseHeader, c.ResponseBody != nil && *c.ResponseBody)
 		} else {
-			responseEntity = buildResponseEntity(conf.responseHeader, conf.responseBody)
+			responseEntity = buildResponseEntity(conf.ResponseHeader != nil && *conf.ResponseHeader, conf.ResponseBody != nil && *conf.ResponseBody)
 		}
 
 		// entity
@@ -104,7 +104,7 @@ func New(handler func(entity *Entity), options ...ConfigOption) gin.HandlerFunc 
 		if latency > time.Minute {
 			latency = latency - latency%time.Second
 		}
-		conf.handler(&Entity{
+		conf.Handler(&Entity{
 			Method:     ctx.Request.Method,
 			Path:       ctx.Request.RequestURI,
 			RemoteAddr: ctx.Request.RemoteAddr,

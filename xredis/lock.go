@@ -53,12 +53,12 @@ type Lock struct {
 	token      string
 }
 
-func NewLock(ctx context.Context, client *redis.Client, key string, expiration time.Duration, options ...LockOption) (*Lock, error) {
+func NewLock(ctx context.Context, client *redis.Client, key string, expiration time.Duration, options ...*LockOption) (*Lock, error) {
 	l := &Lock{
 		client: client,
 	}
 	// new mutex lock options
-	opts := newLockOptions(options...)
+	opts := mergeLockOptions(options...)
 
 	// assignment
 	l.key = key
@@ -66,12 +66,14 @@ func NewLock(ctx context.Context, client *redis.Client, key string, expiration t
 
 	// generate a unique key to prevent others from releasing the lock
 	l.token = uuid.New().String()
-	l.val = opts.value
+	if opts.Value != nil {
+		l.val = *opts.Value
+	}
 
 	// timeout
 	timeout := expiration
-	if opts.blockingTimeout != nil {
-		timeout = *opts.blockingTimeout
+	if opts.BlockingTimeout != nil {
+		timeout = *opts.BlockingTimeout
 	}
 
 	// make sure can exit
@@ -96,7 +98,7 @@ func NewLock(ctx context.Context, client *redis.Client, key string, expiration t
 			return l, nil
 		}
 		doCount++
-		stop, duration := opts.backoff.Next(doCount)
+		stop, duration := opts.Backoff.Next(doCount)
 		if stop {
 			return nil, ErrAcquireLock
 		}

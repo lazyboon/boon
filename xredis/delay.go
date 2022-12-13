@@ -129,16 +129,16 @@ type IDelayer interface {
 type Delay struct {
 	client    *Client
 	readyChan chan *Job
-	*delayOptions
+	option    *DelayOption
 }
 
-func NewDelay(client *Client, options ...DelayOption) *Delay {
+func NewDelay(client *Client, options ...*DelayOption) *Delay {
 	rand.Seed(time.Now().UnixNano())
-	opts := newDelayOptions(options...)
+	opts := mergeDelayOption(options...)
 	d := &Delay{
-		client:       client,
-		delayOptions: opts,
-		readyChan:    make(chan *Job),
+		client:    client,
+		option:    opts,
+		readyChan: make(chan *Job),
 	}
 	d.listenZSet()
 	d.listenReadyList()
@@ -222,23 +222,23 @@ func (d *Delay) RandomGetErrorJobs(topic string, count int64) ([]*Job, error) {
 }
 
 func (d *Delay) poolJobStringKey(topic string, id string) string {
-	return fmt.Sprintf("%s:pool_%s:%s", d.namespace, topic, id)
+	return fmt.Sprintf("%s:pool_%s:%s", *d.option.Namespace, topic, id)
 }
 
 func (d *Delay) topicReadyListKey(topic string) string {
-	return fmt.Sprintf("%s:ready_%s", d.namespace, topic)
+	return fmt.Sprintf("%s:ready_%s", *d.option.Namespace, topic)
 }
 
 func (d *Delay) topicZSetKey(topic string) string {
-	return fmt.Sprintf("%s:%s", d.namespace, topic)
+	return fmt.Sprintf("%s:%s", *d.option.Namespace, topic)
 }
 
 func (d *Delay) topicErrorSetKey(topic string) string {
-	return fmt.Sprintf("%s:error_%s", d.namespace, topic)
+	return fmt.Sprintf("%s:error_%s", *d.option.Namespace, topic)
 }
 
 func (d *Delay) listenZSet() {
-	for _, topic := range d.listenTopics {
+	for _, topic := range d.option.ListenTopics {
 		go d.listenZSetTopic(topic)
 	}
 }
@@ -254,8 +254,8 @@ func (d *Delay) listenZSetTopic(topic string) {
 		working = true
 		keys := []string{d.topicZSetKey(topic), d.topicReadyListKey(topic), d.topicErrorSetKey(topic)}
 		_, err := luaDelayQueueMoveToReadyScript.Run(context.TODO(), d.client, keys, fmt.Sprintf("%d", time.Now().Unix())).Result()
-		if err != nil && d.errorCallback != nil {
-			d.errorCallback(fmt.Errorf("%w, %s", ErrDelayListenTopic, err.Error()))
+		if err != nil && d.option.ErrorCallback != nil {
+			d.option.ErrorCallback(fmt.Errorf("%w, %s", ErrDelayListenTopic, err.Error()))
 		}
 		working = false
 	}
@@ -263,24 +263,24 @@ func (d *Delay) listenZSetTopic(topic string) {
 
 func (d *Delay) listenReadyList() {
 	go func() {
-		if len(d.listenTopics) == 0 {
+		if len(d.option.ListenTopics) == 0 {
 			return
 		}
-		topics := make([]string, len(d.listenTopics))
-		for idx, topic := range d.listenTopics {
+		topics := make([]string, len(d.option.ListenTopics))
+		for idx, topic := range d.option.ListenTopics {
 			topics[idx] = d.topicReadyListKey(topic)
 		}
 		for {
 			result, err := d.client.BRPop(context.TODO(), time.Duration(10)*time.Second, topics...).Result()
 			if err != nil {
-				if !errors.Is(redis.Nil, err) && d.errorCallback != nil {
-					d.errorCallback(fmt.Errorf("%w, %s", ErrDelayListenReady, err.Error()))
+				if !errors.Is(redis.Nil, err) && d.option.ErrorCallback != nil {
+					d.option.ErrorCallback(fmt.Errorf("%w, %s", ErrDelayListenReady, err.Error()))
 				}
 				continue
 			}
 			jobs, err := d.getJob(result[1])
-			if err != nil && d.errorCallback != nil {
-				d.errorCallback(err)
+			if err != nil && d.option.ErrorCallback != nil {
+				d.option.ErrorCallback(err)
 				continue
 			}
 			if len(jobs) == 0 {

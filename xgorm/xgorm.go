@@ -6,6 +6,7 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"sync"
+	"time"
 )
 
 var (
@@ -14,22 +15,17 @@ var (
 	connectPoolSet map[string]struct{}
 )
 
-func InitWithConfigs(configs []*Config, cs ...map[string]*gorm.Config) {
-	m := mergeGormConfig(cs...)
-	for _, cfg := range configs {
-		opts := cfg.ToOptions()
-		if c, ok := m[cfg.Alias]; ok {
-			opts = append(opts, WithConfig.GormConfig(c))
-		}
-		AddConnectPool(opts...)
+func InitWithConfigs(configs []*Config) {
+	for _, config := range configs {
+		AddConnectPool(config)
 	}
 }
 
-func AddConnectPool(options ...ConfigOption) {
+func AddConnectPool(conf *Config) {
 	lock.Lock()
 	defer lock.Unlock()
 	initInstancesContainer()
-	conf := newConfig(options...)
+	conf.init()
 	key := connectPoolKey(conf)
 
 	// check connection pool for conflicts, the same host、port、db can only appear once
@@ -40,34 +36,34 @@ func AddConnectPool(options ...ConfigOption) {
 
 	// add connect pool to instance map
 	var dial gorm.Dialector
-	switch conf.drive {
+	switch conf.Drive {
 	case "mysql":
 		dial = mysql.Open(fmt.Sprintf(
 			"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=true",
-			conf.user,
-			conf.password,
-			conf.host,
-			conf.port,
-			conf.db,
-			conf.charset,
+			conf.User,
+			conf.Password,
+			conf.Host,
+			conf.Port,
+			conf.DB,
+			conf.Charset,
 		))
 	case "sqlserver":
 		dial = sqlserver.Open(fmt.Sprintf(
 			"sqlserver://%s:%s@%s:%d?database=%s",
-			conf.user,
-			conf.password,
-			conf.host,
-			conf.port,
-			conf.db,
+			conf.User,
+			conf.Password,
+			conf.Host,
+			conf.Port,
+			conf.DB,
 		))
 	default:
 		panic("add connect pool error: drive unknown")
 	}
-	db, err := gorm.Open(dial, conf.gormConfig)
+	db, err := gorm.Open(dial, conf.GormConfig)
 	if err != nil {
 		panic(err)
 	}
-	if conf.debug {
+	if conf.Debug {
 		db = db.Debug()
 	}
 	sqlDB, err := db.DB()
@@ -78,19 +74,19 @@ func AddConnectPool(options ...ConfigOption) {
 	if err != nil {
 		panic(err)
 	}
-	if conf.maxOpenConn != nil {
-		sqlDB.SetMaxOpenConns(int(*conf.maxOpenConn))
+	if conf.MaxOpenConn != nil {
+		sqlDB.SetMaxOpenConns(int(*conf.MaxOpenConn))
 	}
-	if conf.maxIdleConn != nil {
-		sqlDB.SetMaxIdleConns(int(*conf.maxIdleConn))
+	if conf.MaxIdleConn != nil {
+		sqlDB.SetMaxIdleConns(int(*conf.MaxIdleConn))
 	}
-	if conf.connMaxLifetime != nil {
-		sqlDB.SetConnMaxLifetime(*conf.connMaxLifetime)
+	if conf.ConnMaxLifetime != nil {
+		sqlDB.SetConnMaxLifetime(time.Duration(*conf.ConnMaxLifetime) * time.Second)
 	}
-	if conf.connMaxIdleTime != nil {
-		sqlDB.SetConnMaxIdleTime(*conf.connMaxIdleTime)
+	if conf.ConnMaxIdleTime != nil {
+		sqlDB.SetConnMaxIdleTime(time.Duration(*conf.ConnMaxIdleTime) * time.Second)
 	}
-	instanceMap[conf.alias] = db
+	instanceMap[conf.Alias] = db
 }
 
 func Connect(alias ...string) *gorm.DB {
@@ -110,16 +106,6 @@ func initInstancesContainer() {
 	}
 }
 
-func connectPoolKey(c *config) string {
-	return fmt.Sprintf("%s+%d+%s", c.host, c.port, c.db)
-}
-
-func mergeGormConfig(cs ...map[string]*gorm.Config) map[string]*gorm.Config {
-	ans := map[string]*gorm.Config{}
-	for _, item := range cs {
-		for k, v := range item {
-			ans[k] = v
-		}
-	}
-	return ans
+func connectPoolKey(c *Config) string {
+	return fmt.Sprintf("%s+%d+%s", c.Host, c.Port, c.DB)
 }

@@ -2,39 +2,34 @@ package recovery
 
 import "github.com/gin-gonic/gin"
 
-var (
-	WithConfig = withConfig{}
-)
-
-//----------------------------------------------------------------------------------------------------------------------
-
-type config struct {
-	logCallback func(msg string)
-	handler     func(c *gin.Context, err interface{})
+type Option struct {
+	LogCallback func(msg string)
+	Handler     func(c *gin.Context, err interface{})
 }
 
-func newConfig(options ...ConfigOption) *config {
-	c := &config{}
-	for _, option := range options {
-		option(c)
-	}
-	return c
+func NewOption() *Option {
+	return &Option{}
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-
-type ConfigOption func(c *config)
-
-type withConfig struct{}
-
-func (withConfig) LogCallback(f func(msg string)) ConfigOption {
-	return func(c *config) {
-		c.logCallback = f
-	}
+func (o *Option) SetLogCallback(v func(msg string)) *Option {
+	o.LogCallback = v
+	return o
 }
 
-func (withConfig) Handler(f func(c *gin.Context, err interface{})) ConfigOption {
-	return func(c *config) {
-		c.handler = f
+func (o *Option) SetHandler(v func(c *gin.Context, err interface{})) *Option {
+	o.Handler = v
+	return o
+}
+
+func mergeOptions(options ...*Option) *Option {
+	ans := NewOption()
+	for _, item := range options {
+		if item.LogCallback != nil {
+			ans.LogCallback = item.LogCallback
+		}
+		if item.Handler != nil {
+			ans.Handler = item.Handler
+		}
 	}
+	return ans
 }

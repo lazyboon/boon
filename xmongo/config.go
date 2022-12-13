@@ -1,7 +1,5 @@
 package xmongo
 
-import "time"
-
 type Config struct {
 	Alias           string  `json:"alias"`
 	Host            string  `json:"host"`
@@ -13,31 +11,11 @@ type Config struct {
 	Password        *string `json:"password"`
 }
 
-func (c *Config) ToOptions() []ConfigOption {
-	ans := make([]ConfigOption, 0)
-	if c.Alias != "" {
-		ans = append(ans, WithConfig.Alias(c.Alias))
+func (c *Config) init() {
+	if c.Host == "" {
+		c.Host = "127.0.0.1"
 	}
-	if c.Host != "" {
-		ans = append(ans, WithConfig.Host(c.Host))
+	if c.Port == 0 {
+		c.Port = 27017
 	}
-	if c.Port != 0 {
-		ans = append(ans, WithConfig.Port(c.Port))
-	}
-	if c.MaxPoolSize != nil {
-		ans = append(ans, WithConfig.MaxPoolSize(*c.MaxPoolSize))
-	}
-	if c.MinPoolSize != nil {
-		ans = append(ans, WithConfig.MinPoolSize(*c.MinPoolSize))
-	}
-	if c.MaxConnIdleTime != nil {
-		ans = append(ans, WithConfig.MaxConnIdleTime(time.Duration(*c.MaxConnIdleTime)*time.Second))
-	}
-	if c.Username != nil {
-		ans = append(ans, WithConfig.Username(*c.Username))
-	}
-	if c.Password != nil {
-		ans = append(ans, WithConfig.Password(*c.Password))
-	}
-	return ans
 }

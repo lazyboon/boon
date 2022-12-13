@@ -1,59 +1,60 @@
 package metadata
 
-var (
-	WithConfig = withConfig{}
-)
-
-//----------------------------------------------------------------------------------------------------------------------
-
-type config struct {
-	requestID     bool
-	receiveTime   bool
-	responseTime  bool
-	serverName    string
-	serverVersion string
+type Option struct {
+	RequestID     *bool
+	ReceiveTime   *bool
+	ResponseTime  *bool
+	ServerName    *string
+	ServerVersion *string
 }
 
-func newConfig(options ...ConfigOption) *config {
-	c := &config{}
-	for _, option := range options {
-		option(c)
-	}
-	return c
+func NewOption() *Option {
+	return &Option{}
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-
-type ConfigOption func(c *config)
-
-type withConfig struct{}
-
-func (withConfig) RequestID(b bool) ConfigOption {
-	return func(c *config) {
-		c.requestID = b
-	}
+func (o *Option) SetRequestID(b bool) *Option {
+	o.RequestID = &b
+	return o
 }
 
-func (withConfig) ReceiveTime(b bool) ConfigOption {
-	return func(c *config) {
-		c.receiveTime = b
-	}
+func (o *Option) SetReceiveTime(b bool) *Option {
+	o.ReceiveTime = &b
+	return o
 }
 
-func (withConfig) ResponseTime(b bool) ConfigOption {
-	return func(c *config) {
-		c.responseTime = b
-	}
+func (o *Option) SetResponseTime(b bool) *Option {
+	o.ResponseTime = &b
+	return o
 }
 
-func (withConfig) ServerName(name string) ConfigOption {
-	return func(c *config) {
-		c.serverName = name
-	}
+func (o *Option) SetServerName(name string) *Option {
+	o.ServerName = &name
+	return o
 }
 
-func (withConfig) ServerVersion(version string) ConfigOption {
-	return func(c *config) {
-		c.serverVersion = version
+func (o *Option) SetServerVersion(version string) *Option {
+	o.ServerVersion = &version
+	return o
+}
+
+func mergeOptions(options ...*Option) *Option {
+	ans := NewOption()
+	for _, item := range options {
+		if item.RequestID != nil {
+			ans.RequestID = item.RequestID
+		}
+		if item.ReceiveTime != nil {
+			ans.ReceiveTime = item.ReceiveTime
+		}
+		if item.ResponseTime != nil {
+			ans.ResponseTime = item.ResponseTime
+		}
+		if item.ServerName != nil {
+			ans.ServerName = item.ServerName
+		}
+		if item.ServerVersion != nil {
+			ans.ServerVersion = item.ServerVersion
+		}
 	}
+	return ans
 }

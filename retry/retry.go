@@ -14,7 +14,9 @@ func WithBackoff(backoff IBackoff) Option {
 	}
 }
 
-func Do(task func(c int) error, opts ...Option) error {
+type TaskHandler func(count int) error
+
+func Do(task TaskHandler, opts ...Option) error {
 	o := &options{}
 	for _, opt := range opts {
 		opt(o)

@@ -1,8 +1,6 @@
 package xgorm
 
-import (
-	"time"
-)
+import "gorm.io/gorm"
 
 type Config struct {
 	Alias           string `json:"alias"`
@@ -18,46 +16,23 @@ type Config struct {
 	ConnMaxLifetime *uint  `json:"conn_max_lifetime"`
 	ConnMaxIdleTime *uint  `json:"conn_max_idle_time"`
 	Debug           bool   `json:"debug"`
+	GormConfig      *gorm.Config
 }
 
-func (c *Config) ToOptions() []ConfigOption {
-	ans := make([]ConfigOption, 0)
-	if c.Alias != "" {
-		ans = append(ans, WithConfig.Alias(c.Alias))
+func (c *Config) init() {
+	if c.Drive == "" {
+		c.Drive = "mysql"
 	}
-	if c.Drive != "" {
-		ans = append(ans, WithConfig.Drive(c.Drive))
+	if c.Host == "" {
+		c.Host = "127.0.0.1"
 	}
-	if c.Host != "" {
-		ans = append(ans, WithConfig.Host(c.Host))
+	if c.Port == 0 {
+		c.Port = 3306
 	}
-	if c.Port != 0 {
-		ans = append(ans, WithConfig.Port(c.Port))
+	if c.User == "" {
+		c.User = "root"
 	}
-	if c.DB != "" {
-		ans = append(ans, WithConfig.DB(c.DB))
+	if c.Charset == "" {
+		c.Charset = "utf8mb4"
 	}
-	if c.User != "" {
-		ans = append(ans, WithConfig.User(c.User))
-	}
-	if c.Password != "" {
-		ans = append(ans, WithConfig.Password(c.Password))
-	}
-	if c.Charset != "" {
-		ans = append(ans, WithConfig.Charset(c.Charset))
-	}
-	if c.MaxIdleConn != nil {
-		ans = append(ans, WithConfig.MaxIdleConn(*c.MaxIdleConn))
-	}
-	if c.MaxOpenConn != nil {
-		ans = append(ans, WithConfig.MaxOpenConn(*c.MaxOpenConn))
-	}
-	if c.ConnMaxLifetime != nil {
-		ans = append(ans, WithConfig.ConnMaxLifetime(time.Duration(*c.ConnMaxLifetime)*time.Second))
-	}
-	if c.ConnMaxIdleTime != nil {
-		ans = append(ans, WithConfig.ConnMaxIdleTime(time.Duration(*c.ConnMaxIdleTime)*time.Second))
-	}
-	ans = append(ans, WithConfig.Debug(c.Debug))
-	return ans
 }

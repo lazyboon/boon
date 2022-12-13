@@ -1,7 +1,5 @@
 package xredis
 
-import "time"
-
 type Config struct {
 	Alias           string `json:"alias"`
 	Host            string `json:"host"`
@@ -20,50 +18,11 @@ type Config struct {
 	ConnMaxLifetime *uint  `json:"conn_max_lifetime"`
 }
 
-func (c *Config) ToOptions() []ConfigOption {
-	ans := make([]ConfigOption, 0)
-	if c.Alias != "" {
-		ans = append(ans, WithConfig.Alias(c.Alias))
+func (c *Config) init() {
+	if c.Host == "" {
+		c.Host = "127.0.0.1"
 	}
-	if c.Host != "" {
-		ans = append(ans, WithConfig.Host(c.Host))
+	if c.Port == 0 {
+		c.Port = 6379
 	}
-	if c.Port != 0 {
-		ans = append(ans, WithConfig.Port(c.Port))
-	}
-	if c.Username != "" {
-		ans = append(ans, WithConfig.Username(c.Username))
-	}
-	if c.Password != "" {
-		ans = append(ans, WithConfig.Password(c.Password))
-	}
-	ans = append(ans, WithConfig.DB(c.DB))
-	if c.DialTimeout != nil {
-		ans = append(ans, WithConfig.DialTimeout(time.Duration(*c.DialTimeout)*time.Second))
-	}
-	if c.ReadTimeout != nil {
-		ans = append(ans, WithConfig.ReadTimeout(time.Duration(*c.ReadTimeout)*time.Second))
-	}
-	if c.WriteTimeout != nil {
-		ans = append(ans, WithConfig.WriteTimeout(time.Duration(*c.WriteTimeout)*time.Second))
-	}
-	if c.PoolTimeout != nil {
-		ans = append(ans, WithConfig.PoolTimeout(time.Duration(*c.PoolTimeout)*time.Second))
-	}
-	if c.PoolSize != nil {
-		ans = append(ans, WithConfig.PoolSize(*c.PoolSize))
-	}
-	if c.MinIdleConn != nil {
-		ans = append(ans, WithConfig.MinIdleConn(*c.MinIdleConn))
-	}
-	if c.MaxIdleConn != nil {
-		ans = append(ans, WithConfig.MaxIdleConn(*c.MaxIdleConn))
-	}
-	if c.ConnMaxIdleTime != nil {
-		ans = append(ans, WithConfig.ConnMaxIdleTime(time.Duration(*c.ConnMaxIdleTime)*time.Second))
-	}
-	if c.ConnMaxLifetime != nil {
-		ans = append(ans, WithConfig.ConnMaxLifetime(time.Duration(*c.ConnMaxLifetime)*time.Second))
-	}
-	return ans
 }
