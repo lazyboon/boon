@@ -104,7 +104,7 @@ func New(handler func(entity *Entity), options ...*Option) gin.HandlerFunc {
 		if latency > time.Minute {
 			latency = latency - latency%time.Second
 		}
-		conf.Handler(&Entity{
+		handler(&Entity{
 			Method:     ctx.Request.Method,
 			Path:       ctx.Request.RequestURI,
 			RemoteAddr: ctx.Request.RemoteAddr,

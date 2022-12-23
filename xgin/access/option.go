@@ -35,7 +35,6 @@ type Option struct {
 	*BaseOption
 	SkipPaths    []string
 	SpecificPath map[string]*BaseOption
-	Handler      func(entity *Entity)
 }
 
 func NewOption() *Option {
@@ -48,7 +47,6 @@ func NewOption() *Option {
 		},
 		SkipPaths:    make([]string, 0),
 		SpecificPath: map[string]*BaseOption{},
-		Handler:      nil,
 	}
 }
 
@@ -64,11 +62,6 @@ func (o *Option) SetSkipPaths(v []string) *Option {
 
 func (o *Option) SetSpecificPath(v map[string]*BaseOption) *Option {
 	o.SpecificPath = v
-	return o
-}
-
-func (o *Option) SetHandler(v func(entity *Entity)) *Option {
-	o.Handler = v
 	return o
 }
 
@@ -94,9 +87,6 @@ func mergeOptions(options ...*Option) *Option {
 		}
 		for key, val := range item.SpecificPath {
 			ans.SpecificPath[key] = val
-		}
-		if item.Handler != nil {
-			ans.Handler = item.Handler
 		}
 	}
 	return ans
