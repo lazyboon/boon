@@ -40,10 +40,14 @@ func AddConnectPool(conf *Config) {
 	opts.ApplyURI(fmt.Sprintf("mongodb://%s:%d", conf.Host, conf.Port))
 
 	if conf.Username != nil && conf.Password != nil {
-		opts.SetAuth(mongoOptions.Credential{
+		credential := mongoOptions.Credential{
 			Username: *conf.Username,
 			Password: *conf.Password,
-		})
+		}
+		if conf.AuthSource != nil {
+			credential.AuthSource = *conf.AuthSource
+		}
+		opts.SetAuth(credential)
 	}
 	if conf.MaxPoolSize != nil {
 		opts.SetMaxPoolSize(*conf.MaxPoolSize)

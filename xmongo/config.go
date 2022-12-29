@@ -9,6 +9,7 @@ type Config struct {
 	MaxConnIdleTime *uint   `json:"max_conn_idle_time"`
 	Username        *string `json:"username"`
 	Password        *string `json:"password"`
+	AuthSource      *string `json:"auth_source"`
 }
 
 func (c *Config) init() {

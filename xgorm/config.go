@@ -3,19 +3,21 @@ package xgorm
 import "gorm.io/gorm"
 
 type Config struct {
-	Alias           string `json:"alias"`
-	Drive           string `json:"drive"`
-	Host            string `json:"host"`
-	Port            uint   `json:"port"`
-	DB              string `json:"db"`
-	User            string `json:"user"`
-	Password        string `json:"password"`
-	Charset         string `json:"charset"`
-	MaxIdleConn     *uint  `json:"max_idle_conn"`
-	MaxOpenConn     *uint  `json:"max_open_conn"`
-	ConnMaxLifetime *uint  `json:"conn_max_lifetime"`
-	ConnMaxIdleTime *uint  `json:"conn_max_idle_time"`
-	Debug           bool   `json:"debug"`
+	Alias           string  `json:"alias"`
+	Drive           string  `json:"drive"`
+	Host            string  `json:"host"`
+	Port            uint    `json:"port"`
+	DB              string  `json:"db"`
+	User            string  `json:"user"`
+	Password        string  `json:"password"`
+	Charset         string  `json:"charset"`
+	Loc             *string `json:"loc"`
+	ParseTime       *bool   `json:"parse_time"`
+	MaxIdleConn     *uint   `json:"max_idle_conn"`
+	MaxOpenConn     *uint   `json:"max_open_conn"`
+	ConnMaxLifetime *uint   `json:"conn_max_lifetime"`
+	ConnMaxIdleTime *uint   `json:"conn_max_idle_time"`
+	Debug           bool    `json:"debug"`
 	GormConfig      *gorm.Config
 }
 

@@ -38,15 +38,22 @@ func AddConnectPool(conf *Config) {
 	var dial gorm.Dialector
 	switch conf.Drive {
 	case "mysql":
-		dial = mysql.Open(fmt.Sprintf(
-			"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=true",
+		dns := fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s?charset=%s",
 			conf.User,
 			conf.Password,
 			conf.Host,
 			conf.Port,
 			conf.DB,
 			conf.Charset,
-		))
+		)
+		if conf.ParseTime != nil {
+			dns = fmt.Sprintf("%s&parseTime=%v", dns, *conf.ParseTime)
+		}
+		if conf.Loc != nil {
+			dns = fmt.Sprintf("%s&loc=%s", dns, *conf.Loc)
+		}
+		dial = mysql.Open(dns)
 	case "sqlserver":
 		dial = sqlserver.Open(fmt.Sprintf(
 			"sqlserver://%s:%s@%s:%d?database=%s",
