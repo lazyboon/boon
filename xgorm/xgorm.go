@@ -59,7 +59,15 @@ func AddConnectPool(conf *Config) {
 	default:
 		panic("add connect pool error: drive unknown")
 	}
-	db, err := gorm.Open(dial, conf.GormConfig)
+	var (
+		db  *gorm.DB
+		err error
+	)
+	if conf.GormConfig != nil {
+		db, err = gorm.Open(dial, conf.GormConfig)
+	} else {
+		db, err = gorm.Open(dial)
+	}
 	if err != nil {
 		panic(err)
 	}
