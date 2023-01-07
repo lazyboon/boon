@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis/v9 v9.0.0-beta.3
 	github.com/google/uuid v1.3.0
+	github.com/json-iterator/go v1.1.12
 	github.com/streadway/amqp v1.0.0
 	go.mongodb.org/mongo-driver v1.10.3
 	gorm.io/driver/mysql v1.4.1
@@ -27,7 +28,6 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect

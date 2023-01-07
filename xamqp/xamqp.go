@@ -111,7 +111,7 @@ func (a *AMQP) Consume(consumer *Consumer, qos QOS) (<-chan amqp.Delivery, error
 }
 
 func (a *AMQP) dial() error {
-	url := fmt.Sprintf("amqp://%s:%s@%s:%d/", a.conf.User, a.conf.Password, a.conf.Host, a.conf.Port)
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s", a.conf.User, a.conf.Password, a.conf.Host, a.conf.Port, a.conf.Vhost)
 	connection, err := NewConnection(url)
 	if err != nil {
 		return err

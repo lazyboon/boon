@@ -8,6 +8,7 @@ type Config struct {
 	Port      int               `json:"port"`
 	User      string            `json:"user"`
 	Password  string            `json:"password"`
+	Vhost     string            `json:"vhost"`
 	Exchanges []*ExchangeConfig `json:"exchanges"`
 }
 
