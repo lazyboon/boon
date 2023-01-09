@@ -46,16 +46,23 @@ func bind(bindKey Key, val interface{}) gin.HandlerFunc {
 		case KeyUri:
 			err = ctx.ShouldBindUri(obj)
 		}
-		if v, ok := obj.(Validator); ok {
-			err = v.Validate()
-		}
-		if err != nil {
+		abort := func(err error) {
 			if ErrorCallback != nil {
 				ErrorCallback(ctx, err)
 				ctx.Abort()
 			} else {
 				ctx.AbortWithStatus(http.StatusBadRequest)
 			}
+		}
+		if err != nil {
+			abort(err)
+			return
+		}
+		if v, ok := obj.(Validator); ok {
+			err = v.Validate()
+		}
+		if err != nil {
+			abort(err)
 			return
 		}
 		ctx.Set(string(bindKey), obj)
