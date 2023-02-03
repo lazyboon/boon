@@ -47,7 +47,7 @@ func NewWithCiphertext(ciphertext string, key string) (*CID, error) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Scan implement sql.Scanner
-func (c *CID) Scan(src any) error {
+func (c *CID) Scan(src interface{}) error {
 	t, err := NewWithOriginal(src.(int64))
 	if err != nil {
 		return err
