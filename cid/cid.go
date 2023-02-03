@@ -70,9 +70,9 @@ func (c *CID) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implement json.Unmarshaler
 func (c *CID) UnmarshalJSON(bytes []byte) error {
-	//if bytes[0] == '"' && bytes[len(bytes)-1] == '"' {
-	//	bytes = bytes[1 : len(bytes)-1]
-	//}
+	if bytes[0] == '"' && bytes[len(bytes)-1] == '"' {
+		bytes = bytes[1 : len(bytes)-1]
+	}
 	c.Ciphertext = string(bytes)
 
 	d, err := decrypt(bytes, []byte(cipherKey))
