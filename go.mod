@@ -7,6 +7,7 @@ require (
 	github.com/go-redis/redis/v9 v9.0.0-beta.3
 	github.com/google/uuid v1.3.0
 	github.com/json-iterator/go v1.1.12
+	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/streadway/amqp v1.0.0
 	go.mongodb.org/mongo-driver v1.10.3
 	gorm.io/driver/mysql v1.4.1
