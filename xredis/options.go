@@ -93,3 +93,57 @@ func mergeDelayOption(options ...*DelayOption) *DelayOption {
 	}
 	return ans
 }
+
+//----------------------------------------------------------------------------------------------------------------------
+
+type CaptchaRate struct {
+	Seconds uint
+	Count   uint
+}
+
+type CaptchaOption struct {
+	Namespace *string
+	Rates     []*CaptchaRate
+	Expire    *uint
+}
+
+func NewCaptchaOption() *CaptchaOption {
+	var expire uint = 300
+	namespace := "com.lazyboon"
+	return &CaptchaOption{
+		Namespace: &namespace,
+		Rates:     []*CaptchaRate{{Seconds: 60, Count: 1}, {Seconds: 86400, Count: 20}},
+		Expire:    &expire,
+	}
+}
+
+func (c *CaptchaOption) SetNamespace(v string) *CaptchaOption {
+	c.Namespace = &v
+	return c
+}
+
+func (c *CaptchaOption) SetRates(v []*CaptchaRate) *CaptchaOption {
+	c.Rates = v
+	return c
+}
+
+func (c *CaptchaOption) SetExpire(v uint) *CaptchaOption {
+	c.Expire = &v
+	return c
+}
+
+func mergeCaptchaOption(options ...*CaptchaOption) *CaptchaOption {
+	ans := NewCaptchaOption()
+	for _, item := range options {
+		if item.Namespace != nil {
+			ans.Namespace = item.Namespace
+		}
+		if item.Rates != nil {
+			ans.Rates = item.Rates
+		}
+		if item.Expire != nil {
+			ans.Expire = item.Expire
+		}
+	}
+	return ans
+}

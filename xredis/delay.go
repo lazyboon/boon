@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v9"
-	"math/rand"
 	"time"
 )
 
@@ -133,7 +132,6 @@ type Delay struct {
 }
 
 func NewDelay(client *Client, options ...*DelayOption) *Delay {
-	rand.Seed(time.Now().UnixNano())
 	opts := mergeDelayOption(options...)
 	d := &Delay{
 		client:    client,
