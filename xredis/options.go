@@ -97,14 +97,14 @@ func mergeDelayOption(options ...*DelayOption) *DelayOption {
 //----------------------------------------------------------------------------------------------------------------------
 
 type CaptchaRate struct {
-	Seconds uint
-	Count   uint
+	Seconds uint `json:"seconds"`
+	Count   uint `json:"count"`
 }
 
 type CaptchaOption struct {
-	Namespace *string
-	Rates     []*CaptchaRate
-	Expire    *uint
+	Namespace *string        `json:"namespace"`
+	Rates     []*CaptchaRate `json:"rates"`
+	Expire    *uint          `json:"expire"`
 }
 
 func NewCaptchaOption() *CaptchaOption {
