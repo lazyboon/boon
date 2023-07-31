@@ -63,7 +63,7 @@ func (c *Captcha) Get(key string) (string, error) {
 }
 
 func (c *Captcha) Set(key string, value string) (*CaptchaRate, error) {
-	argv := []any{value, *c.option.Expire}
+	argv := []interface{}{value, *c.option.Expire}
 	for _, item := range c.option.Rates {
 		argv = append(argv, item.Seconds, item.Count)
 	}
