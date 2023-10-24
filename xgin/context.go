@@ -88,51 +88,54 @@ func (c *Context) response(handler response.Handler, f func()) {
 func Wrap(handler func(c *Context) response.Handler) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		c := &Context{Context: ctx}
-		r := handler(c)()
-		for key, val := range r.Header {
-			c.Context.Header(key, val)
-		}
-		normal := gin.H{
-			"code": r.Code,
-			"msg":  r.Msg,
-			"data": r.Data,
-		}
-		switch r.Type {
-		case response.ContentTypeJSON:
-			c.Context.JSON(r.StatusCode, normal)
-		case response.ContentTypeIndentedJSON:
-			c.Context.IndentedJSON(r.StatusCode, normal)
-		case response.ContentTypeSecureJSON:
-			c.Context.SecureJSON(r.StatusCode, normal)
-		case response.ContentTypeJsonpJSON:
-			c.Context.JSONP(r.StatusCode, normal)
-		case response.ContentTypeAsciiJSON:
-			c.Context.AsciiJSON(r.StatusCode, normal)
-		case response.ContentTypePureJSON:
-			c.Context.PureJSON(r.StatusCode, normal)
-		case response.ContentTypeProtoBuf:
-			c.Context.ProtoBuf(r.StatusCode, normal)
-		case response.ContentTypeTOML:
-			c.Context.TOML(r.StatusCode, normal)
-		case response.ContentTypeXML:
-			c.Context.XML(r.StatusCode, normal)
-		case response.ContentTypeYAML:
-			c.Context.YAML(r.StatusCode, normal)
-		case response.ContentTypeMsgPack:
-			c.Context.Render(r.StatusCode, render.MsgPack{Data: normal})
-		case response.ContentTypeRedirect:
-			switch r.Data.(type) {
-			case string:
-				c.Context.Redirect(r.StatusCode, r.Data.(string))
+		h := handler(c)
+		c.response(h, func() {
+			r := h()
+			for key, val := range r.Header {
+				c.Context.Header(key, val)
 			}
-		case response.ContentTypeString:
-			switch r.Data.(type) {
-			case string:
-				c.Context.String(r.StatusCode, r.Data.(string))
+			normal := gin.H{
+				"code": r.Code,
+				"msg":  r.Msg,
+				"data": r.Data,
 			}
-		case response.ContentTypeHTML:
-			c.Context.HTML(r.StatusCode, r.HTMLPath, r.Data)
-		}
-		ctx.Next()
+			switch r.Type {
+			case response.ContentTypeJSON:
+				c.Context.JSON(r.StatusCode, normal)
+			case response.ContentTypeIndentedJSON:
+				c.Context.IndentedJSON(r.StatusCode, normal)
+			case response.ContentTypeSecureJSON:
+				c.Context.SecureJSON(r.StatusCode, normal)
+			case response.ContentTypeJsonpJSON:
+				c.Context.JSONP(r.StatusCode, normal)
+			case response.ContentTypeAsciiJSON:
+				c.Context.AsciiJSON(r.StatusCode, normal)
+			case response.ContentTypePureJSON:
+				c.Context.PureJSON(r.StatusCode, normal)
+			case response.ContentTypeProtoBuf:
+				c.Context.ProtoBuf(r.StatusCode, normal)
+			case response.ContentTypeTOML:
+				c.Context.TOML(r.StatusCode, normal)
+			case response.ContentTypeXML:
+				c.Context.XML(r.StatusCode, normal)
+			case response.ContentTypeYAML:
+				c.Context.YAML(r.StatusCode, normal)
+			case response.ContentTypeMsgPack:
+				c.Context.Render(r.StatusCode, render.MsgPack{Data: normal})
+			case response.ContentTypeRedirect:
+				switch r.Data.(type) {
+				case string:
+					c.Context.Redirect(r.StatusCode, r.Data.(string))
+				}
+			case response.ContentTypeString:
+				switch r.Data.(type) {
+				case string:
+					c.Context.String(r.StatusCode, r.Data.(string))
+				}
+			case response.ContentTypeHTML:
+				c.Context.HTML(r.StatusCode, r.HTMLPath, r.Data)
+			}
+			ctx.Next()
+		})
 	}
 }
