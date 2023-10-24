@@ -3,7 +3,9 @@ package hashid
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"github.com/speps/go-hashids/v2"
+	"strconv"
 	"sync"
 )
 
@@ -65,7 +67,20 @@ func MustNewHashID(num int64) *HashID {
 }
 
 func (h *HashID) Scan(src interface{}) error {
-	t, err := NewHashID(src.(int64))
+	var num int64
+	switch src.(type) {
+	case []uint8:
+		x, err := strconv.Atoi(string(src.([]uint8)))
+		if err != nil {
+			return err
+		}
+		num = int64(x)
+	case int64:
+		num = src.(int64)
+	default:
+		return errors.New("invalid src type")
+	}
+	t, err := NewHashID(num)
 	if err != nil {
 		return err
 	}
