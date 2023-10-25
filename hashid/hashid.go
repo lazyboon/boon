@@ -88,11 +88,8 @@ func (h *HashID) Scan(src interface{}) error {
 	return nil
 }
 
-func (h *HashID) Value() (driver.Value, error) {
-	if h != nil {
-		return h.Int, nil
-	}
-	return nil, nil
+func (h HashID) Value() (driver.Value, error) {
+	return h.Int, nil
 }
 
 func (h *HashID) MarshalJSON() ([]byte, error) {
