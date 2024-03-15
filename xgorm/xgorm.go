@@ -59,12 +59,16 @@ func AddConnectPool(conf *Config) {
 		if conf.InstanceName != "" {
 			instanceName = fmt.Sprintf("/%s", conf.InstanceName)
 		}
+		port := ""
+		if conf.Port != 0 {
+			port = fmt.Sprintf(":%d", conf.Port)
+		}
 		dial = sqlserver.Open(fmt.Sprintf(
-			"sqlserver://%s:%s@%s:%d%s?database=%s",
+			"sqlserver://%s:%s@%s%s%s?database=%s",
 			conf.User,
 			conf.Password,
 			conf.Host,
-			conf.Port,
+			port,
 			instanceName,
 			conf.DB,
 		))

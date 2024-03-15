@@ -29,7 +29,7 @@ func (c *Config) init() {
 	if c.Host == "" {
 		c.Host = "127.0.0.1"
 	}
-	if c.Port == 0 {
+	if c.Port == 0 && c.Drive == "mysql" {
 		c.Port = 3306
 	}
 	if c.User == "" {
