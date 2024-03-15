@@ -55,12 +55,17 @@ func AddConnectPool(conf *Config) {
 		}
 		dial = mysql.Open(dns)
 	case "sqlserver":
+		instanceName := ""
+		if conf.InstanceName != "" {
+			instanceName = fmt.Sprintf("/%s", conf.InstanceName)
+		}
 		dial = sqlserver.Open(fmt.Sprintf(
-			"sqlserver://%s:%s@%s:%d?database=%s",
+			"sqlserver://%s:%s@%s:%d%s?database=%s",
 			conf.User,
 			conf.Password,
 			conf.Host,
 			conf.Port,
+			instanceName,
 			conf.DB,
 		))
 	default:

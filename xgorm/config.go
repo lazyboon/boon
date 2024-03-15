@@ -18,6 +18,7 @@ type Config struct {
 	ConnMaxLifetime *uint   `json:"conn_max_lifetime"`
 	ConnMaxIdleTime *uint   `json:"conn_max_idle_time"`
 	Debug           bool    `json:"debug"`
+	InstanceName    string  `json:"instance_name"`
 	GormConfig      *gorm.Config
 }
 
