@@ -28,6 +28,7 @@ func NewChannel(connection *amqp.Connection, qos QOS) (*Channel, error) {
 				_ = channel.Close()
 				break
 			}
+			_ = channel.Close()
 			debugf("amqp channel closed, reason: %+v", reason)
 
 			for {
