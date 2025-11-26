@@ -1,4 +1,4 @@
-module github.com/lazyboon/boon
+module github.com/lazyboon/boon/v2
 
 go 1.24.7
 
