@@ -1,6 +1,6 @@
 package xamqp
 
-type Args = map[string]interface{}
+type Args = map[string]any
 
 type Config struct {
 	Alias     string            `json:"alias"`

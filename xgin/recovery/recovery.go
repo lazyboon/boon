@@ -2,9 +2,9 @@ package recovery
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
 	"net"
 	"net/http/httputil"
 	"os"
@@ -21,10 +21,16 @@ func New(options ...*Option) gin.HandlerFunc {
 				// Check for a broken connection, as it is not really a
 				// condition that warrants a panic stack trace.
 				var brokenPipe bool
-				if ne, ok := err.(*net.OpError); ok {
-					if se, ok := ne.Err.(*os.SyscallError); ok {
-						if strings.Contains(strings.ToLower(se.Error()), "broken pipe") || strings.Contains(strings.ToLower(se.Error()), "connection reset by peer") {
-							brokenPipe = true
+				err, ok := err.(error)
+				if ok {
+					var ne *net.OpError
+					if errors.As(err, &ne) {
+						var se *os.SyscallError
+						if errors.As(ne.Err, &se) {
+							msg := strings.ToLower(se.Error())
+							if strings.Contains(msg, "broken pipe") || strings.Contains(msg, "connection reset by peer") {
+								brokenPipe = true
+							}
 						}
 					}
 				}
@@ -79,7 +85,7 @@ func stack(skip int) []byte {
 		// Print this much at least.  If we can't find the source, it won't show.
 		_, _ = fmt.Fprintf(buf, "%s:%d (0x%x)\n", file, line, pc)
 		if file != lastFile {
-			data, err := ioutil.ReadFile(file)
+			data, err := os.ReadFile(file)
 			if err != nil {
 				continue
 			}

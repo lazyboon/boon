@@ -15,7 +15,7 @@ type Config struct {
 	Alphabet  string `json:"alphabet"`
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 var (
 	hashIDOnce     sync.Once
@@ -46,7 +46,7 @@ func SharedHashID() *hashids.HashID {
 	return hashIDInstance
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type HashID struct {
 	String string
@@ -66,7 +66,7 @@ func MustNewHashID(num int64) *HashID {
 	return h
 }
 
-func (h *HashID) Scan(src interface{}) error {
+func (h *HashID) Scan(src any) error {
 	var num int64
 	switch src.(type) {
 	case []uint8:

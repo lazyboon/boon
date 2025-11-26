@@ -11,7 +11,7 @@ var (
 	ErrorCallback func(ctx *gin.Context, err error)
 )
 
-func bind(bindKey Key, val interface{}) gin.HandlerFunc {
+func bind(bindKey Key, val any) gin.HandlerFunc {
 	value := reflect.ValueOf(val)
 	if value.Kind() == reflect.Ptr {
 		panic(`Bind struct can not be a pointer. Example: Use: bind(Struct{}) instead of bind(&Struct{})`)
@@ -69,50 +69,50 @@ func bind(bindKey Key, val interface{}) gin.HandlerFunc {
 	}
 }
 
-func JSON(val interface{}) gin.HandlerFunc {
+func JSON(val any) gin.HandlerFunc {
 	return bind(KeyJSON, val)
 }
 
-func XML(val interface{}) gin.HandlerFunc {
+func XML(val any) gin.HandlerFunc {
 	return bind(KeyXML, val)
 }
 
-func Form(val interface{}) gin.HandlerFunc {
+func Form(val any) gin.HandlerFunc {
 	return bind(KeyForm, val)
 }
 
-func Query(val interface{}) gin.HandlerFunc {
+func Query(val any) gin.HandlerFunc {
 	return bind(KeyQuery, val)
 }
 
-func FormPost(val interface{}) gin.HandlerFunc {
+func FormPost(val any) gin.HandlerFunc {
 	return bind(KeyFormPost, val)
 }
 
-func FormMultipart(val interface{}) gin.HandlerFunc {
+func FormMultipart(val any) gin.HandlerFunc {
 	return bind(KeyFormMultipart, val)
 }
 
-func ProtoBuf(val interface{}) gin.HandlerFunc {
+func ProtoBuf(val any) gin.HandlerFunc {
 	return bind(KeyProtoBuf, val)
 }
 
-func MsgPack(val interface{}) gin.HandlerFunc {
+func MsgPack(val any) gin.HandlerFunc {
 	return bind(KeyMsgPack, val)
 }
 
-func YAML(val interface{}) gin.HandlerFunc {
+func YAML(val any) gin.HandlerFunc {
 	return bind(KeyYAML, val)
 }
 
-func Header(val interface{}) gin.HandlerFunc {
+func Header(val any) gin.HandlerFunc {
 	return bind(KeyHeader, val)
 }
 
-func TOML(val interface{}) gin.HandlerFunc {
+func TOML(val any) gin.HandlerFunc {
 	return bind(KeyTOML, val)
 }
 
-func Uri(val interface{}) gin.HandlerFunc {
+func Uri(val any) gin.HandlerFunc {
 	return bind(KeyUri, val)
 }

@@ -13,6 +13,7 @@ type Config struct {
 	Charset         string  `json:"charset"`
 	Loc             *string `json:"loc"`
 	ParseTime       *bool   `json:"parse_time"`
+	SSLMode         string  `json:"ssl_mode"`
 	MaxIdleConn     *uint   `json:"max_idle_conn"`
 	MaxOpenConn     *uint   `json:"max_open_conn"`
 	ConnMaxLifetime *uint   `json:"conn_max_lifetime"`

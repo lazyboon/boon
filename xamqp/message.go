@@ -3,12 +3,12 @@ package xamqp
 import (
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
 
 type Message struct {
-	Headers         map[string]interface{}
+	Headers         map[string]any
 	ContentType     string
 	ContentEncoding string
 	DeliveryMode    uint8
@@ -24,7 +24,7 @@ type Message struct {
 	Body            []byte
 }
 
-func NewMessageDefault(body interface{}) (*Message, error) {
+func NewMessageDefault(body any) (*Message, error) {
 	payload, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(body)
 	if err != nil {
 		return nil, err

@@ -3,7 +3,7 @@ package xamqp
 import (
 	"errors"
 	"fmt"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var (
@@ -184,7 +184,7 @@ func (a *AMQP) declareQueues(channel *Channel, exchangeName string, queues []*Qu
 	return nil
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 func debug(msg string) {
 	if DebugCallback != nil {
@@ -192,7 +192,7 @@ func debug(msg string) {
 	}
 }
 
-func debugf(format string, args ...interface{}) {
+func debugf(format string, args ...any) {
 	if DebugCallback != nil {
 		DebugCallback(fmt.Sprintf(format, args...))
 	}

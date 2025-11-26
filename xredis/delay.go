@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 
@@ -16,7 +16,7 @@ var (
 	ErrDelayGetJobUnmarshal = errors.New("get job unmarshal error")
 )
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 var (
 	// luaDelayQueueAddJobScript
@@ -85,7 +85,7 @@ var (
 	`)
 )
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type JobID struct {
 	Topic string `json:"topic"`
@@ -112,7 +112,7 @@ type jobWrapper struct {
 	Done int64 `json:"done"`
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type IDelayer interface {
 	Upsert(jobs ...*Job) error
@@ -123,7 +123,7 @@ type IDelayer interface {
 	RandomGetErrorJobs(topic string, count int64) ([]*Job, error)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type Delay struct {
 	client    *Client
@@ -146,7 +146,7 @@ func NewDelay(client *Client, options ...*DelayOption) *Delay {
 func (d *Delay) Upsert(jobs ...*Job) error {
 	size := len(jobs)
 	keys := make([]string, 0, size)
-	argv := make([]interface{}, 0, size)
+	argv := make([]any, 0, size)
 	for _, job := range jobs {
 		if job.Topic == "" {
 			return errors.New("topic cannot be empty")

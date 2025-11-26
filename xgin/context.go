@@ -12,7 +12,7 @@ var (
 	AfterResponseCallback  func(ctx *gin.Context, handler response.Handler)
 )
 
-//----------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
 
 type Context struct {
 	*gin.Context
@@ -22,51 +22,51 @@ func NewContext(ctx *gin.Context) *Context {
 	return &Context{Context: ctx}
 }
 
-func (c *Context) JSONReq() interface{} {
+func (c *Context) JSONReq() any {
 	return c.Context.MustGet(string(bind.KeyJSON))
 }
 
-func (c *Context) XMLReq() interface{} {
+func (c *Context) XMLReq() any {
 	return c.Context.MustGet(string(bind.KeyXML))
 }
 
-func (c *Context) FormReq() interface{} {
+func (c *Context) FormReq() any {
 	return c.Context.MustGet(string(bind.KeyForm))
 }
 
-func (c *Context) QueryReq() interface{} {
+func (c *Context) QueryReq() any {
 	return c.Context.MustGet(string(bind.KeyQuery))
 }
 
-func (c *Context) FormPostReq() interface{} {
+func (c *Context) FormPostReq() any {
 	return c.Context.MustGet(string(bind.KeyFormPost))
 }
 
-func (c *Context) FormMultipartReq() interface{} {
+func (c *Context) FormMultipartReq() any {
 	return c.Context.MustGet(string(bind.KeyFormMultipart))
 }
 
-func (c *Context) ProtoBufReq() interface{} {
+func (c *Context) ProtoBufReq() any {
 	return c.Context.MustGet(string(bind.KeyProtoBuf))
 }
 
-func (c *Context) MsgPackReq() interface{} {
+func (c *Context) MsgPackReq() any {
 	return c.Context.MustGet(string(bind.KeyMsgPack))
 }
 
-func (c *Context) YAMLReq() interface{} {
+func (c *Context) YAMLReq() any {
 	return c.Context.MustGet(string(bind.KeyYAML))
 }
 
-func (c *Context) HeaderReq() interface{} {
+func (c *Context) HeaderReq() any {
 	return c.Context.MustGet(string(bind.KeyHeader))
 }
 
-func (c *Context) TOMLReq() interface{} {
+func (c *Context) TOMLReq() any {
 	return c.Context.MustGet(string(bind.KeyTOML))
 }
 
-func (c *Context) UriReq() interface{} {
+func (c *Context) UriReq() any {
 	return c.Context.MustGet(string(bind.KeyUri))
 }
 
@@ -83,7 +83,7 @@ func (c *Context) response(handler response.Handler, f func()) {
 	}
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
 
 func Wrap(handler func(c *Context) response.Handler) gin.HandlerFunc {
 	return func(ctx *gin.Context) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -32,7 +32,7 @@ var (
 	`)
 )
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type ICaptcha interface {
 	Get(key string) (string, error)
@@ -40,7 +40,7 @@ type ICaptcha interface {
 	Delete(key string) error
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------------------------------------------------
 
 type Captcha struct {
 	client *Client
@@ -63,7 +63,7 @@ func (c *Captcha) Get(key string) (string, error) {
 }
 
 func (c *Captcha) Set(key string, value string) (*CaptchaRate, error) {
-	argv := []interface{}{value, *c.option.Expire}
+	argv := []any{value, *c.option.Expire}
 	for _, item := range c.option.Rates {
 		argv = append(argv, item.Seconds, item.Count)
 	}

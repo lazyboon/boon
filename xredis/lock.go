@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v9"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
 )
@@ -128,7 +128,7 @@ func (l *Lock) Token() string {
 
 func (l *Lock) Release(ctx context.Context) error {
 	res, err := luaLockReleaseScript.Run(ctx, l.client, []string{l.key}, fmt.Sprintf("%s%s", l.token, l.val)).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return ErrLockInactive
 	}
 	if err != nil {

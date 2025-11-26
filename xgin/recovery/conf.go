@@ -4,7 +4,7 @@ import "github.com/gin-gonic/gin"
 
 type Option struct {
 	LogCallback func(msg string)
-	Handler     func(c *gin.Context, err interface{})
+	Handler     func(c *gin.Context, err any)
 }
 
 func NewOption() *Option {
@@ -16,7 +16,7 @@ func (o *Option) SetLogCallback(v func(msg string)) *Option {
 	return o
 }
 
-func (o *Option) SetHandler(v func(c *gin.Context, err interface{})) *Option {
+func (o *Option) SetHandler(v func(c *gin.Context, err any)) *Option {
 	o.Handler = v
 	return o
 }

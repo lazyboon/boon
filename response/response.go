@@ -29,7 +29,7 @@ type Response struct {
 	Header     map[string]string `json:"header"`
 	Code       int               `json:"code"`
 	Msg        string            `json:"msg"`
-	Data       interface{}       `json:"data"`
+	Data       any               `json:"data"`
 	Errs       []error           `json:"errs"`
 	Type       ContentType       `json:"type"`
 	HTMLPath   string            `json:"html_path"`
@@ -91,7 +91,7 @@ func (h Handler) WithMsg(msg string) Handler {
 	}
 }
 
-func (h Handler) WithData(data interface{}) Handler {
+func (h Handler) WithData(data any) Handler {
 	return func() *Response {
 		a := h()
 		a.Data = data
@@ -256,7 +256,7 @@ func (h Handler) Msg() string {
 	return h().Msg
 }
 
-func (h Handler) Data() interface{} {
+func (h Handler) Data() any {
 	return h().Data
 }
 

@@ -6,14 +6,14 @@ import (
 )
 
 type RequestEntity struct {
-	Header map[string]interface{} `json:"header,omitempty"`
-	Body   interface{}            `json:"body,omitempty"`
+	Header map[string]any `json:"header,omitempty"`
+	Body   any            `json:"body,omitempty"`
 }
 
 type ResponseEntity struct {
-	Header map[string]interface{} `json:"header,omitempty"`
-	Body   interface{}            `json:"body,omitempty"`
-	Status int                    `json:"status,omitempty"`
+	Header map[string]any `json:"header,omitempty"`
+	Body   any            `json:"body,omitempty"`
+	Status int            `json:"status,omitempty"`
 }
 
 type Entity struct {

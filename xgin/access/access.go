@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -52,13 +52,13 @@ func New(handler func(entity *Entity), options ...*Option) gin.HandlerFunc {
 				contentType := ctx.ContentType()
 				switch contentType {
 				case gin.MIMEJSON:
-					body := make(map[string]interface{})
+					body := make(map[string]any)
 					err := ctx.ShouldBindBodyWith(&body, binding.JSON)
 					if err == nil {
 						ans.Body = body
 						if cb, ok := ctx.Get(gin.BodyBytesKey); ok {
 							if cbb, ok := cb.([]byte); ok {
-								ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(cbb))
+								ctx.Request.Body = io.NopCloser(bytes.NewBuffer(cbb))
 							}
 						}
 					}
@@ -117,8 +117,8 @@ func New(handler func(entity *Entity), options ...*Option) gin.HandlerFunc {
 	}
 }
 
-func httpHeaderToMap(header http.Header) map[string]interface{} {
-	ans := make(map[string]interface{}, len(header))
+func httpHeaderToMap(header http.Header) map[string]any {
+	ans := make(map[string]any, len(header))
 	for key, val := range header {
 		if len(val) > 0 {
 			ans[strings.ToLower(key)] = val[0]
@@ -135,8 +135,8 @@ func sliceToSet(data []string) map[string]struct{} {
 	return ans
 }
 
-func postFormToMap(form url.Values) map[string]interface{} {
-	ans := make(map[string]interface{}, len(form))
+func postFormToMap(form url.Values) map[string]any {
+	ans := make(map[string]any, len(form))
 	for key, val := range form {
 		if len(val) > 0 {
 			ans[strings.ToLower(key)] = val[0]

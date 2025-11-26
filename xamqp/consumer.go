@@ -7,5 +7,5 @@ type Consumer struct {
 	Exclusive bool
 	NoLocal   bool
 	NoWait    bool
-	Args      map[string]interface{}
+	Args      map[string]any
 }

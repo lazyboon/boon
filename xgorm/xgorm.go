@@ -3,6 +3,7 @@ package xgorm
 import (
 	"fmt"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"sync"
@@ -71,6 +72,21 @@ func AddConnectPool(conf *Config) {
 			port,
 			instanceName,
 			conf.DB,
+		))
+	case "postgres":
+		loc := "UTC"
+		if conf.Loc != nil {
+			loc = *conf.Loc
+		}
+		postgres.Open(fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
+			conf.Host,
+			conf.Port,
+			conf.User,
+			conf.Password,
+			conf.DB,
+			conf.SSLMode,
+			loc,
 		))
 	default:
 		panic("add connect pool error: drive unknown")
