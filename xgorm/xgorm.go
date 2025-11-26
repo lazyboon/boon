@@ -78,7 +78,7 @@ func AddConnectPool(conf *Config) {
 		if conf.Loc != nil {
 			loc = *conf.Loc
 		}
-		postgres.Open(fmt.Sprintf(
+		dial = postgres.Open(fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 			conf.Host,
 			conf.Port,
