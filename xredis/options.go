@@ -1,7 +1,7 @@
 package xredis
 
 import (
-	"github.com/lazyboon/boon/retry"
+	"github.com/lazyboon/boon/v2/retry"
 	"time"
 )
 

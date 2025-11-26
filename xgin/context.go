@@ -3,8 +3,8 @@ package xgin
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
-	"github.com/lazyboon/boon/response"
-	"github.com/lazyboon/boon/xgin/bind"
+	"github.com/lazyboon/boon/v2/response"
+	"github.com/lazyboon/boon/v2/xgin/bind"
 )
 
 var (
