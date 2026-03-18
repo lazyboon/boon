@@ -3,16 +3,16 @@ package xmongo
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
-	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 	"sync"
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	mongoOptions "go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var (
-	lock           sync.RWMutex
-	instanceMap    map[string]*mongo.Client
-	connectPoolSet map[string]struct{}
+	lock        sync.RWMutex
+	instanceMap = make(map[string]*mongo.Client)
 )
 
 func InitWithConfigs(configs []*Config) {
@@ -24,21 +24,24 @@ func InitWithConfigs(configs []*Config) {
 func AddConnectPool(conf *Config) {
 	lock.Lock()
 	defer lock.Unlock()
-	initInstancesContainer()
+
 	conf.init()
 
-	key := connectPoolKey(conf)
-
-	// check connection pool for conflicts, the same host、port can only appear once
-	if _, ok := connectPoolSet[key]; ok {
-		panic("conflict when building connection pool container")
+	// check alias
+	if conf.Alias == "" {
+		panic("mongo alias required")
 	}
-	connectPoolSet[key] = struct{}{}
+	if _, ok := instanceMap[conf.Alias]; ok {
+		panic("duplicate mongo alias: " + conf.Alias)
+	}
 
-	// build mongo options
-	opts := mongoOptions.Client()
-	opts.ApplyURI(fmt.Sprintf("mongodb://%s:%d", conf.Host, conf.Port))
+	// build URI
+	uri := fmt.Sprintf("mongodb://%s:%d", conf.Host, conf.Port)
 
+	// build options
+	opts := mongoOptions.Client().ApplyURI(uri)
+
+	// auth
 	if conf.Username != nil && conf.Password != nil {
 		credential := mongoOptions.Credential{
 			Username: *conf.Username,
@@ -49,6 +52,8 @@ func AddConnectPool(conf *Config) {
 		}
 		opts.SetAuth(credential)
 	}
+
+	// pool config
 	if conf.MaxPoolSize != nil {
 		opts.SetMaxPoolSize(*conf.MaxPoolSize)
 	}
@@ -58,39 +63,47 @@ func AddConnectPool(conf *Config) {
 	if conf.MaxConnIdleTime != nil {
 		opts.SetMaxConnIdleTime(time.Duration(*conf.MaxConnIdleTime) * time.Second)
 	}
+	if conf.ConnectTimeout != nil {
+		opts.SetConnectTimeout(time.Duration(*conf.ConnectTimeout) * time.Second)
+	}
 
 	// create client
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, opts)
+	client, err := mongo.Connect(opts)
 	if err != nil {
 		panic(err)
 	}
 
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
+	// ping
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err = client.Ping(ctx, nil); err != nil {
 		panic(err)
 	}
+
 	instanceMap[conf.Alias] = client
 }
 
-func Connect(alias ...string) *mongo.Client {
-	k := ""
-	if len(alias) > 0 {
-		k = alias[len(alias)-1]
+func Connect(alias string) *mongo.Client {
+	lock.RLock()
+	defer lock.RUnlock()
+
+	client, ok := instanceMap[alias]
+	if !ok {
+		panic("mongo client not found: " + alias)
 	}
-	return instanceMap[k]
+	return client
 }
 
-func initInstancesContainer() {
-	if instanceMap == nil {
-		instanceMap = make(map[string]*mongo.Client)
-	}
-	if connectPoolSet == nil {
-		connectPoolSet = make(map[string]struct{})
-	}
-}
+func CloseAll() {
+	lock.Lock()
+	defer lock.Unlock()
 
-func connectPoolKey(c *Config) string {
-	return fmt.Sprintf("%s+%d", c.Host, c.Port)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	for k, client := range instanceMap {
+		_ = client.Disconnect(ctx)
+		delete(instanceMap, k)
+	}
 }

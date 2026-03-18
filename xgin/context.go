@@ -83,9 +83,11 @@ func (c *Context) response(handler response.Handler, f func()) {
 	}
 }
 
-// ----------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
-func Wrap(handler func(c *Context) response.Handler) gin.HandlerFunc {
+type WrapNormalOption func(o *response.Response) any
+
+func Wrap(handler func(c *Context) response.Handler, options ...WrapNormalOption) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		c := &Context{Context: ctx}
 		h := handler(c)
@@ -94,10 +96,14 @@ func Wrap(handler func(c *Context) response.Handler) gin.HandlerFunc {
 			for key, val := range r.Header {
 				c.Context.Header(key, val)
 			}
-			normal := gin.H{
+			var normal any
+			normal = gin.H{
 				"code": r.Code,
 				"msg":  r.Msg,
 				"data": r.Data,
+			}
+			for _, option := range options {
+				normal = option(r)
 			}
 			switch r.Type {
 			case response.ContentTypeJSON:

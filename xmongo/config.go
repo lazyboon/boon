@@ -7,6 +7,7 @@ type Config struct {
 	MaxPoolSize     *uint64 `json:"max_pool_size"`
 	MinPoolSize     *uint64 `json:"min_pool_size"`
 	MaxConnIdleTime *uint   `json:"max_conn_idle_time"`
+	ConnectTimeout  *uint   `json:"connect_timeout"`
 	Username        *string `json:"username"`
 	Password        *string `json:"password"`
 	AuthSource      *string `json:"auth_source"`
